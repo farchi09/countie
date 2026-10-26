@@ -49,6 +49,9 @@ button{font:inherit;cursor:pointer;border-radius:12px;border:2px solid var(--lin
 .mode button{font-size:22px;font-weight:700}
 .mode .on-add{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .mode .on-sub{background:var(--minus);border-color:var(--minus);color:var(--card)}
+.mode button:not(.on-add):not(.on-sub){color:var(--muted);background:var(--bg)}
+.bad{border-color:var(--minus)!important;box-shadow:0 0 0 3px var(--minus-soft)}
+.primary.sub{background:var(--minus);border-color:var(--minus);color:var(--card)}
 .qty{display:grid;grid-template-columns:52px 1fr 64px 76px 64px;align-items:center;gap:8px}
 .qty .u{font-size:26px;font-weight:700}
 .qty .now{font-size:16px;color:var(--muted);text-align:right;line-height:1.2}
@@ -84,6 +87,7 @@ button{font:inherit;cursor:pointer;border-radius:12px;border:2px solid var(--lin
   <section class="card" id="whoCard">
     <label for="who">盤點人</label>
     <input type="text" id="who" placeholder="輸入您的名字" autocomplete="name">
+    <p class="err" id="whoErr" hidden>請先填寫盤點人的名字。</p>
   </section>
 
   <section class="card" id="pick">
@@ -97,10 +101,11 @@ button{font:inherit;cursor:pointer;border-radius:12px;border:2px solid var(--lin
 
   <section class="card" id="enter" hidden>
     <h2>2. 填數量</h2>
-    <div class="mode" id="mode" hidden>
+    <div class="mode" id="mode">
       <button id="mAdd">＋ 增加</button><button id="mSub">－ 減少</button>
     </div>
     <div id="qtys"></div>
+    <p class="hint">每一格都要填，沒有的話請填 0。</p>
     <p class="result" id="result" hidden></p>
     <p class="err" id="err" hidden></p>
     <button class="primary" id="addBtn">加入</button>
@@ -170,7 +175,6 @@ function choose(pid){
   cur=pid;sign=1;
   $("chosenName").textContent=P[pid].name;
   $("chosen").hidden=false;$("pickBox").hidden=true;$("plist").hidden=true;$("enter").hidden=false;
-  $("mode").hidden=!counted(pid);
   $("qtys").innerHTML=P[pid].units.map(u=>`<div class="qty"><span class="u">${u}</span><span class="now" data-now="${u}"></span>
     <input type="text" inputmode="numeric" id="q-${u}" data-u="${u}" value="" placeholder="0" aria-label="${u}數量">
     <button data-step="-1" data-u="${u}" aria-label="${u}減一">−</button><button data-step="1" data-u="${u}" aria-label="${u}加一">＋</button></div>`).join("");
@@ -181,14 +185,17 @@ $("change").addEventListener("click",backToPick);
 $("mAdd").addEventListener("click",()=>{sign=1;update()});
 $("mSub").addEventListener("click",()=>{sign=-1;update()});
 $("qtys").addEventListener("click",e=>{const b=e.target.closest("button[data-step]");if(!b)return;
-  const i=$("q-"+b.dataset.u);i.value=Math.max(0,(parseInt(i.value)||0)+ +b.dataset.step)||"";update()});
-$("qtys").addEventListener("input",e=>{if(e.target.matches("input")){e.target.value=e.target.value.replace(/\D/g,"").slice(0,4);update()}});
+  const i=$("q-"+b.dataset.u);i.value=String(Math.max(0,(parseInt(i.value)||0)+ +b.dataset.step));i.classList.remove("bad");update()});
+$("qtys").addEventListener("input",e=>{if(e.target.matches("input")){e.target.value=e.target.value.replace(/\D/g,"").slice(0,4);e.target.classList.remove("bad");update()}});
 
 function readQ(){const q={};P[cur].units.forEach(u=>{const v=parseInt($("q-"+u).value)||0;if(v)q[u]=v});return q}
+const emptyUnits=()=>P[cur].units.filter(u=>$("q-"+u).value.trim()==="");
 function update(){
   if(cur==null)return;
   const has=counted(cur),t=totals(cur),q=readQ();
   $("mAdd").className=sign>0?"on-add":"";$("mSub").className=sign<0?"on-sub":"";
+  $("mAdd").textContent=(sign>0?"✓ ":"")+"＋ 增加";$("mSub").textContent=(sign<0?"✓ ":"")+"－ 減少";
+  $("addBtn").classList.toggle("sub",sign<0);
   document.querySelectorAll("[data-now]").forEach(el=>el.textContent=has?`目前 ${t[el.dataset.now]||0}`:"");
   $("addBtn").textContent=sign<0?"確定減少":"加入";
   const after={};P[cur].units.forEach(u=>after[u]=(t[u]||0)+sign*(q[u]||0));
@@ -196,20 +203,27 @@ function update(){
   $("err").hidden=true;
 }
 $("addBtn").addEventListener("click",()=>{
+  if(!checkWho())return;
+  const miss=emptyUnits();
+  if(miss.length){miss.forEach(u=>$("q-"+u).classList.add("bad"));showErr(`「${miss.join("、")}」還沒填，沒有的話請填 0。`);
+    const f=$("q-"+miss[0]);f.scrollIntoView({behavior:"smooth",block:"center"});f.focus({preventScroll:true});return}
   const q=readQ();
-  if(!Object.keys(q).length){showErr("請先填數量，至少一格不是 0。");return}
+  if(sign<0&&!Object.keys(q).length){showErr("減少的數量都是 0，請填要減少幾個。");return}
   if(sign<0){const t=totals(cur);for(const u in q)if(q[u]>(t[u]||0)){showErr(`${u}目前只有 ${t[u]||0}，不能減 ${q[u]}。`);return}}
   S.entries.push({id:Date.now()+Math.random(),pid:cur,sign,q,t:Date.now()});save();
   backToPick();renderRows();$("pick").scrollIntoView({behavior:"smooth",block:"start"});
 });
 function showErr(m){$("err").textContent=m;$("err").hidden=false}
+function checkWho(){if($("who").value.trim())return true;$("who").classList.add("bad");$("whoErr").hidden=false;
+  $("who").scrollIntoView({behavior:"smooth",block:"center"});$("who").focus({preventScroll:true});return false}
+$("who").addEventListener("input",()=>{$("who").classList.remove("bad");$("whoErr").hidden=true});
 
 function renderRows(){
   const pids=[...new Set(S.entries.map(e=>e.pid))].sort((a,b)=>a-b);
   $("cnt").textContent=pids.length?`（${pids.length} 項）`:"";
   if(!pids.length){$("rows").innerHTML='<p class="empty">還沒有資料。從上面選一個商品開始。</p>';return}
   $("rows").innerHTML=pids.map(pid=>{const p=P[pid],t=totals(pid);
-    const es=S.entries.filter(e=>e.pid===pid).map(e=>{const s=Object.entries(e.q).map(([u,v])=>`${v} ${u}`).join(" ");
+    const es=S.entries.filter(e=>e.pid===pid).map(e=>{const s=Object.entries(e.q).map(([u,v])=>`${v} ${u}`).join(" ")||"全部 0";
       const tm=new Date(e.t),hm=`${tm.getHours()}:${String(tm.getMinutes()).padStart(2,"0")}`;
       return `<div class="entry"><span class="${e.sign<0?"sub":""}">${hm}　${e.sign<0?"減少":"增加"} ${s}</span>
         <button data-del="${e.id}" class="${armed===e.id?"sure":""}">${armed===e.id?"確定刪除":"刪除"}</button></div>`}).join("");
@@ -264,6 +278,7 @@ function draw(){
 }
 let lastBlob=null;
 $("done").addEventListener("click",async()=>{
+  if(!checkWho())return;
   if(!S.entries.length){$("outCard").hidden=false;$("out").innerHTML='<p class="err">還沒有盤點資料，先加入至少一項商品。</p>';$("outCard").scrollIntoView({behavior:"smooth"});return}
   try{await document.fonts.load('44px "Noto Sans TC"')}catch(e){}
   const c=draw();const url=c.toDataURL("image/png");
