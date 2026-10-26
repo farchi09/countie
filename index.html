@@ -105,7 +105,7 @@ button{font:inherit;cursor:pointer;border-radius:12px;border:2px solid var(--lin
       <button id="mAdd">＋ 增加</button><button id="mSub">－ 減少</button>
     </div>
     <div id="qtys"></div>
-    <p class="hint">每一格都要填，沒有的話請填 0。</p>
+    <p class="hint">沒有的格子保持 0 就好。</p>
     <p class="result" id="result" hidden></p>
     <p class="err" id="err" hidden></p>
     <button class="primary" id="addBtn">加入</button>
@@ -169,6 +169,7 @@ $("q").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();clo
 $("q").addEventListener("search",closeKb);
 $("kbDone").addEventListener("click",closeKb);
 $("plist").addEventListener("touchstart",closeKb,{passive:true});
+$("qtys").addEventListener("focusin",e=>{if(e.target.matches("input"))setTimeout(()=>e.target.select(),0)});
 $("plist").addEventListener("scroll",closeKb,{passive:true});
 
 function choose(pid){
@@ -176,7 +177,7 @@ function choose(pid){
   $("chosenName").textContent=P[pid].name;
   $("chosen").hidden=false;$("pickBox").hidden=true;$("plist").hidden=true;$("enter").hidden=false;
   $("qtys").innerHTML=P[pid].units.map(u=>`<div class="qty"><span class="u">${u}</span><span class="now" data-now="${u}"></span>
-    <input type="text" inputmode="numeric" id="q-${u}" data-u="${u}" value="" placeholder="0" aria-label="${u}數量">
+    <input type="text" inputmode="numeric" id="q-${u}" data-u="${u}" value="0" placeholder="0" aria-label="${u}數量">
     <button data-step="-1" data-u="${u}" aria-label="${u}減一">−</button><button data-step="1" data-u="${u}" aria-label="${u}加一">＋</button></div>`).join("");
   update();$("enter").scrollIntoView({behavior:"smooth",block:"start"});
 }
@@ -186,7 +187,7 @@ $("mAdd").addEventListener("click",()=>{sign=1;update()});
 $("mSub").addEventListener("click",()=>{sign=-1;update()});
 $("qtys").addEventListener("click",e=>{const b=e.target.closest("button[data-step]");if(!b)return;
   const i=$("q-"+b.dataset.u);i.value=String(Math.max(0,(parseInt(i.value)||0)+ +b.dataset.step));i.classList.remove("bad");update()});
-$("qtys").addEventListener("input",e=>{if(e.target.matches("input")){e.target.value=e.target.value.replace(/\D/g,"").slice(0,4);e.target.classList.remove("bad");update()}});
+$("qtys").addEventListener("input",e=>{if(e.target.matches("input")){e.target.value=e.target.value.replace(/\D/g,"").replace(/^0+(?=\d)/,"").slice(0,4);e.target.classList.remove("bad");update()}});
 
 function readQ(){const q={};P[cur].units.forEach(u=>{const v=parseInt($("q-"+u).value)||0;if(v)q[u]=v});return q}
 const emptyUnits=()=>P[cur].units.filter(u=>$("q-"+u).value.trim()==="");
