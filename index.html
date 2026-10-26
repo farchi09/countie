@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>倉庫盤點</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap">
+<style>
+/* Layout: one narrow column, one task per card, everything big and tappable */
+:root{
+  --bg:#eef2f1; --card:#ffffff; --ink:#15242a; --muted:#52646b; --line:#cfd9d8;
+  --accent:#0d6b6e; --accent-ink:#ffffff; --accent-soft:#d9eeee;
+  --minus:#a3412b; --minus-soft:#f6e3dd; --warn-soft:#fbefc9; --warn-ink:#6b4c00;
+  --font:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1719; --card:#18252a; --ink:#eaf2f1; --muted:#a5b6b9; --line:#2d3f44;
+  --accent:#4fb8b9; --accent-ink:#06282a; --accent-soft:#16393c;
+  --minus:#f08a6f; --minus-soft:#3a201a; --warn-soft:#3a3010; --warn-ink:#f2d58a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1719; --card:#18252a; --ink:#eaf2f1; --muted:#a5b6b9; --line:#2d3f44;
+  --accent:#4fb8b9; --accent-ink:#06282a; --accent-soft:#16393c;
+  --minus:#f08a6f; --minus-soft:#3a201a; --warn-soft:#3a3010; --warn-ink:#f2d58a; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:20px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px 120px}
+main{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+h1{font-size:30px;margin:0;font-weight:700}
+h2{font-size:22px;margin:0;font-weight:700}
+.top{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.date{color:var(--muted);font-variant-numeric:tabular-nums}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:14px}
+label{font-weight:500}
+input[type=text],input[type=search]{width:100%;font:inherit;font-size:22px;padding:12px 14px;border:2px solid var(--line);border-radius:12px;background:var(--bg);color:var(--ink)}
+input:focus-visible,button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+button{font:inherit;cursor:pointer;border-radius:12px;border:2px solid var(--line);background:var(--card);color:var(--ink);padding:12px 16px;min-height:56px}
+.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700;font-size:24px;width:100%}
+.list{max-height:46vh;overflow:auto;border:1px solid var(--line);border-radius:12px}
+.search{display:flex;gap:8px}.search input{flex:1;min-width:0}.search button{white-space:nowrap;background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700}
+.list button{display:flex;justify-content:space-between;align-items:center;width:100%;border:0;border-bottom:1px solid var(--line);border-radius:0;text-align:left;min-height:60px;font-size:22px}
+.list button:last-child{border-bottom:0}
+.tag{font-size:16px;color:var(--accent);background:var(--accent-soft);border-radius:999px;padding:2px 10px;white-space:nowrap}
+.chosen{display:flex;justify-content:space-between;align-items:center;gap:12px;background:var(--accent-soft);border-radius:12px;padding:12px 14px}
+.chosen b{font-size:26px}
+.chosen button{min-height:48px;font-size:18px}
+.mode{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mode button{font-size:22px;font-weight:700}
+.mode .on-add{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.mode .on-sub{background:var(--minus);border-color:var(--minus);color:var(--card)}
+.qty{display:grid;grid-template-columns:52px 1fr 64px 76px 64px;align-items:center;gap:8px}
+.qty .u{font-size:26px;font-weight:700}
+.qty .now{font-size:16px;color:var(--muted);text-align:right;line-height:1.2}
+.qty>*{grid-row:1}.qty input{text-align:center;font-size:30px;font-weight:700;padding:8px 4px;font-variant-numeric:tabular-nums;grid-column:4}.qty button[data-step="-1"]{grid-column:3}.qty button[data-step="1"]{grid-column:5}
+.qty button{font-size:30px;padding:0;min-height:60px}
+.hint{font-size:18px;color:var(--muted);margin:0}
+.err{font-size:18px;color:var(--minus);font-weight:500;margin:0}
+.result{font-size:20px;background:var(--bg);border-radius:12px;padding:10px 14px}
+.result b{color:var(--accent)}
+.rows{display:flex;flex-direction:column}
+.row{border-top:1px solid var(--line);padding:12px 0;display:flex;flex-direction:column;gap:6px}
+.row:first-child{border-top:0}
+.row-head{display:flex;justify-content:space-between;gap:12px;font-size:22px}
+.row-head b{font-variant-numeric:tabular-nums;white-space:nowrap}
+.entry{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:17px;color:var(--muted)}
+.entry .sub{color:var(--minus)}
+.entry button{min-height:40px;padding:4px 12px;font-size:16px}
+.entry button.sure{background:var(--minus);border-color:var(--minus);color:var(--card)}
+.empty{color:var(--muted);margin:0}
+.bar{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);
+  padding:12px max(16px,env(safe-area-inset-right,0px)) calc(12px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.bar .primary{max-width:560px;margin:0 auto;display:block}
+#out img{width:100%;border-radius:12px;border:1px solid var(--line)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media (max-width:380px){.qty{grid-template-columns:44px 1fr 56px 64px 56px}}
+</style>
+</head>
+<body>
+
+<main>
+  <div class="top"><h1>倉庫盤點</h1><span class="date" id="today"></span></div>
+
+  <section class="card" id="whoCard">
+    <label for="who">盤點人</label>
+    <input type="text" id="who" placeholder="輸入您的名字" autocomplete="name">
+  </section>
+
+  <section class="card" id="pick">
+    <h2>1. 選商品</h2>
+    <div id="pickBox">
+      <div class="search"><input type="search" id="q" placeholder="打字搜尋，例如：薑" autocomplete="off" enterkeyhint="done"><button id="kbDone" hidden>看結果</button></div>
+    </div>
+    <div class="list" id="plist"></div>
+    <div class="chosen" id="chosen" hidden><b id="chosenName"></b><button id="change">換商品</button></div>
+  </section>
+
+  <section class="card" id="enter" hidden>
+    <h2>2. 填數量</h2>
+    <div class="mode" id="mode" hidden>
+      <button id="mAdd">＋ 增加</button><button id="mSub">－ 減少</button>
+    </div>
+    <div id="qtys"></div>
+    <p class="result" id="result" hidden></p>
+    <p class="err" id="err" hidden></p>
+    <button class="primary" id="addBtn">加入</button>
+  </section>
+
+  <section class="card">
+    <h2>已盤點 <span id="cnt"></span></h2>
+    <div class="rows" id="rows"></div>
+  </section>
+
+  <section class="card" id="outCard" hidden>
+    <h2>摘要圖</h2>
+    <p class="hint">用手指長按圖片，選「儲存」或「分享」，就可以傳到 LINE。</p>
+    <div id="out"></div>
+    <div class="two">
+      <button id="share">分享</button>
+      <button id="back">繼續盤點</button>
+    </div>
+    <button id="reset">清空，開始新的盤點</button>
+  </section>
+</main>
+<div class="bar"><button class="primary" id="done">完成，產生摘要圖</button></div>
+
+<script>
+const P=[
+["藻一杯","箱盒"],["抹茶 YOUNG 菌","箱盒"],["Super SOD-like","箱盒"],["金剛密碼","箱盒"],["12 種菌","箱盒"],["超級金剛","箱盒"],["金剛S膠囊","箱盒"],
+["蔓越莓酵素","箱盒"],["顏亮亮膠囊","箱盒"],["恆好睡膠囊","箱盒"],["優質螺旋藻","箱罐"],["優質 MCT 椰子油","箱盒"],["西芹蔬果青汁","箱盒"],
+["西芹羽衣","箱盒"],["西芹粉","箱盒"],["台灣香檬飲","箱盒"],["青汁達人","箱盒"],["甘露飲","箱盒"],["鈣離子養生湯","箱盒"],["布道咖哩","箱袋"],
+["淨食番茄","箱盒袋"],["薑一壺","箱盒袋"],["禪滴咖啡","箱盒袋"],["禪滴紅茶拿鐵","箱盒袋"],["寒天咖啡","箱袋"],["咖啡拿鐵","箱袋"],["咖啡達人","箱盒"],
+["黑藜麥拿鐵","箱盒"],["禪滴米蛋白","箱袋"],["綠咖啡 30 入","箱盒"],["禪滴綠原酸濾掛式咖啡","箱盒"],["神奇米胜肽","箱盒"],["覓玉黃金元素","箱盒"],
+["禪滴安心堅果","箱盒"],["南瓜鬆","箱盒"],["鈣離子養生餅","箱盒"],["明日葉脆餅","箱盒"],["雪蓮子穀麥脆片","箱盒"],["小米松子酥","箱盒"],
+["覓玉爆米花（芥末）","箱盒"],["覓玉爆米花（巧克力）","箱盒"],["覓玉爆米花（檸檬）","箱盒"],["檸檬薄片","箱盒"],["馬鈴薯脆片（芥末口味）","箱盒"]
+].map(([n,u],i)=>({id:i,name:n,units:[...u]}));
+const KEY="mei-inventory-v2";
+const $=id=>document.getElementById(id);
+let S={who:"",entries:[]},cur=null,sign=1,armed=null;
+try{const s=JSON.parse(localStorage.getItem(KEY)||"null");if(s&&Array.isArray(s.entries))S=s}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const d=new Date(),dateStr=`${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,"0")}/${String(d.getDate()).padStart(2,"0")}`;
+$("today").textContent=dateStr;
+$("who").value=S.who||"";
+$("who").addEventListener("input",e=>{S.who=e.target.value.trim();save()});
+
+function totals(pid){const t={};P[pid].units.forEach(u=>t[u]=0);
+  S.entries.filter(e=>e.pid===pid).forEach(e=>{for(const u in e.q)t[u]=(t[u]||0)+e.sign*e.q[u]});return t}
+const counted=pid=>S.entries.some(e=>e.pid===pid);
+const fmt=(t,units)=>units.map(u=>`${t[u]||0} ${u}`).join("　");
+
+function renderList(){
+  const q=$("q").value.trim().toLowerCase();
+  const items=P.filter(p=>!q||p.name.toLowerCase().includes(q));
+  $("plist").innerHTML=items.length?items.map(p=>`<button data-id="${p.id}"><span>${p.name}</span>${counted(p.id)?'<span class="tag">已盤點</span>':""}</button>`).join("")
+    :'<p class="empty" style="padding:14px">找不到這個商品，換個字試試。</p>';
+}
+$("plist").addEventListener("click",e=>{const b=e.target.closest("button[data-id]");if(b)choose(+b.dataset.id)});
+$("q").addEventListener("input",renderList);
+const closeKb=()=>{$("q").blur()};
+$("q").addEventListener("focus",()=>{$("kbDone").hidden=false;setTimeout(()=>$("pick").scrollIntoView({behavior:"smooth",block:"start"}),300)});
+$("q").addEventListener("blur",()=>{setTimeout(()=>$("kbDone").hidden=true,150)});
+$("q").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();closeKb()}});
+$("q").addEventListener("search",closeKb);
+$("kbDone").addEventListener("click",closeKb);
+$("plist").addEventListener("touchstart",closeKb,{passive:true});
+$("plist").addEventListener("scroll",closeKb,{passive:true});
+
+function choose(pid){
+  cur=pid;sign=1;
+  $("chosenName").textContent=P[pid].name;
+  $("chosen").hidden=false;$("pickBox").hidden=true;$("plist").hidden=true;$("enter").hidden=false;
+  $("mode").hidden=!counted(pid);
+  $("qtys").innerHTML=P[pid].units.map(u=>`<div class="qty"><span class="u">${u}</span><span class="now" data-now="${u}"></span>
+    <input type="text" inputmode="numeric" id="q-${u}" data-u="${u}" value="" placeholder="0" aria-label="${u}數量">
+    <button data-step="-1" data-u="${u}" aria-label="${u}減一">−</button><button data-step="1" data-u="${u}" aria-label="${u}加一">＋</button></div>`).join("");
+  update();$("enter").scrollIntoView({behavior:"smooth",block:"start"});
+}
+function backToPick(){cur=null;$("chosen").hidden=true;$("pickBox").hidden=false;$("plist").hidden=false;$("enter").hidden=true;$("q").value="";renderList()}
+$("change").addEventListener("click",backToPick);
+$("mAdd").addEventListener("click",()=>{sign=1;update()});
+$("mSub").addEventListener("click",()=>{sign=-1;update()});
+$("qtys").addEventListener("click",e=>{const b=e.target.closest("button[data-step]");if(!b)return;
+  const i=$("q-"+b.dataset.u);i.value=Math.max(0,(parseInt(i.value)||0)+ +b.dataset.step)||"";update()});
+$("qtys").addEventListener("input",e=>{if(e.target.matches("input")){e.target.value=e.target.value.replace(/\D/g,"").slice(0,4);update()}});
+
+function readQ(){const q={};P[cur].units.forEach(u=>{const v=parseInt($("q-"+u).value)||0;if(v)q[u]=v});return q}
+function update(){
+  if(cur==null)return;
+  const has=counted(cur),t=totals(cur),q=readQ();
+  $("mAdd").className=sign>0?"on-add":"";$("mSub").className=sign<0?"on-sub":"";
+  document.querySelectorAll("[data-now]").forEach(el=>el.textContent=has?`目前 ${t[el.dataset.now]||0}`:"");
+  $("addBtn").textContent=sign<0?"確定減少":"加入";
+  const after={};P[cur].units.forEach(u=>after[u]=(t[u]||0)+sign*(q[u]||0));
+  if(has&&Object.keys(q).length){$("result").hidden=false;$("result").innerHTML=`這筆之後：<b>${fmt(after,P[cur].units)}</b>`}else $("result").hidden=true;
+  $("err").hidden=true;
+}
+$("addBtn").addEventListener("click",()=>{
+  const q=readQ();
+  if(!Object.keys(q).length){showErr("請先填數量，至少一格不是 0。");return}
+  if(sign<0){const t=totals(cur);for(const u in q)if(q[u]>(t[u]||0)){showErr(`${u}目前只有 ${t[u]||0}，不能減 ${q[u]}。`);return}}
+  S.entries.push({id:Date.now()+Math.random(),pid:cur,sign,q,t:Date.now()});save();
+  backToPick();renderRows();$("pick").scrollIntoView({behavior:"smooth",block:"start"});
+});
+function showErr(m){$("err").textContent=m;$("err").hidden=false}
+
+function renderRows(){
+  const pids=[...new Set(S.entries.map(e=>e.pid))].sort((a,b)=>a-b);
+  $("cnt").textContent=pids.length?`（${pids.length} 項）`:"";
+  if(!pids.length){$("rows").innerHTML='<p class="empty">還沒有資料。從上面選一個商品開始。</p>';return}
+  $("rows").innerHTML=pids.map(pid=>{const p=P[pid],t=totals(pid);
+    const es=S.entries.filter(e=>e.pid===pid).map(e=>{const s=Object.entries(e.q).map(([u,v])=>`${v} ${u}`).join(" ");
+      const tm=new Date(e.t),hm=`${tm.getHours()}:${String(tm.getMinutes()).padStart(2,"0")}`;
+      return `<div class="entry"><span class="${e.sign<0?"sub":""}">${hm}　${e.sign<0?"減少":"增加"} ${s}</span>
+        <button data-del="${e.id}" class="${armed===e.id?"sure":""}">${armed===e.id?"確定刪除":"刪除"}</button></div>`}).join("");
+    return `<div class="row"><div class="row-head"><span>${p.name}</span><b>${fmt(t,p.units)}</b></div>${es}</div>`}).join("");
+}
+$("rows").addEventListener("click",e=>{const b=e.target.closest("button[data-del]");if(!b)return;const id=+b.dataset.del;
+  if(armed===id){S.entries=S.entries.filter(x=>x.id!==id);armed=null;save();renderList()}else armed=id;renderRows()});
+
+/* ---- summary image ---- */
+function draw(){
+  const pids=[...new Set(S.entries.map(e=>e.pid))].sort((a,b)=>a-b);
+  const has=pids.filter(pid=>Object.values(totals(pid)).some(v=>v>0));
+  const zero=pids.filter(pid=>!has.includes(pid));
+  const none=P.filter(p=>!pids.includes(p.id)).map(p=>p.name);
+  const W=1080,pad=64,rowH=96,F='"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif';
+  const c=document.createElement("canvas"),x=c.getContext("2d");
+  const wrap=(txt,max,font)=>{x.font=font;const out=[];let line="";for(const part of txt.split("、")){const t=line?line+"、"+part:part;if(x.measureText(t).width>max&&line){out.push(line+"、");line=part}else line=t}if(line)out.push(line);return out};
+  const zLines=zero.length?wrap(zero.map(i=>P[i].name).join("、"),W-pad*2-48,`36px ${F}`):[];
+  const nLines=none.length?wrap(none.join("、"),W-pad*2-48,`32px ${F}`):[];
+  let H=pad+70+60+40+rowH*Math.max(has.length,1)+40;
+  if(zLines.length)H+=120+zLines.length*54;
+  if(nLines.length)H+=110+nLines.length*48;
+  H+=pad;
+  c.width=W;c.height=H;
+  x.fillStyle="#ffffff";x.fillRect(0,0,W,H);
+  x.fillStyle="#0d6b6e";x.fillRect(0,0,W,16);
+  let y=pad+40;
+  x.fillStyle="#15242a";x.font=`bold 64px ${F}`;x.textBaseline="alphabetic";x.fillText("倉庫盤點結果",pad,y+20);
+  x.font=`44px ${F}`;x.textAlign="right";x.fillStyle="#52646b";x.fillText(dateStr,W-pad,y+20);x.textAlign="left";
+  y+=80;x.font=`36px ${F}`;x.fillText(`共 ${pids.length} 項商品${S.who?"・盤點人："+S.who:""}`,pad,y);
+  y+=40;
+  x.fillStyle="#15242a";x.fillRect(pad,y,W-pad*2,3);
+  if(!has.length){y+=rowH;x.fillStyle="#52646b";x.font=`40px ${F}`;x.fillText("沒有庫存大於 0 的商品",pad,y-30)}
+  has.forEach((pid,i)=>{const p=P[pid],t=totals(pid);
+    if(i%2){x.fillStyle="#eef4f3";x.fillRect(pad,y+3,W-pad*2,rowH)}
+    const by=y+rowH/2+18;
+    x.fillStyle="#15242a";x.font=`44px ${F}`;
+    let nm=p.name;while(x.measureText(nm).width>W-pad*2-430&&nm.length>2)nm=nm.slice(0,-1);if(nm!==p.name)nm+="…";
+    x.fillText(nm,pad+16,by);
+    x.textAlign="right";let rx=W-pad-16;
+    [...p.units].reverse().forEach(u=>{x.font=`32px ${F}`;x.fillStyle="#52646b";x.fillText(u,rx,by);rx-=40;
+      x.font=`bold 52px ${F}`;x.fillStyle=(t[u]||0)?"#15242a":"#9aa9ad";x.fillText(String(t[u]||0),rx,by);rx-=x.measureText(String(t[u]||0)).width+28});
+    x.textAlign="left";y+=rowH;x.fillStyle="#cfd9d8";x.fillRect(pad,y,W-pad*2,2)});
+  if(!has.length)y+=rowH;
+  y+=40;
+  const box=(lines,title,bg,ink,font,lh)=>{const h=90+lines.length*lh;x.fillStyle=bg;roundRect(pad,y,W-pad*2,h,20);
+    x.fillStyle=ink;x.font=`bold 38px ${F}`;x.fillText(title,pad+24,y+60);x.font=font;lines.forEach((l,i)=>x.fillText(l,pad+24,y+60+lh*(i+1)));y+=h+30};
+  const roundRect=(a,b,w,h,r)=>{x.beginPath();x.moveTo(a+r,b);x.arcTo(a+w,b,a+w,b+h,r);x.arcTo(a+w,b+h,a,b+h,r);x.arcTo(a,b+h,a,b,r);x.arcTo(a,b,a+w,b,r);x.fill()};
+  if(zLines.length)box(zLines,`庫存為 0（${zero.length} 項）`,"#fbefc9","#6b4c00",`36px ${F}`,54);
+  if(nLines.length)box(nLines,`這次沒有盤點（${none.length} 項）`,"#eef2f1","#52646b",`32px ${F}`,48);
+  return c;
+}
+let lastBlob=null;
+$("done").addEventListener("click",async()=>{
+  if(!S.entries.length){$("outCard").hidden=false;$("out").innerHTML='<p class="err">還沒有盤點資料，先加入至少一項商品。</p>';$("outCard").scrollIntoView({behavior:"smooth"});return}
+  try{await document.fonts.load('44px "Noto Sans TC"')}catch(e){}
+  const c=draw();const url=c.toDataURL("image/png");
+  c.toBlob(b=>lastBlob=b,"image/png");
+  $("out").innerHTML=`<img src="${url}" alt="盤點摘要圖">`;
+  $("outCard").hidden=false;$("outCard").scrollIntoView({behavior:"smooth",block:"start"});
+});
+$("share").addEventListener("click",async()=>{
+  try{if(!lastBlob||!navigator.canShare)throw 0;const f=new File([lastBlob],`盤點_${dateStr.replace(/\//g,"")}.png`,{type:"image/png"});
+    if(!navigator.canShare({files:[f]}))throw 0;await navigator.share({files:[f],title:"倉庫盤點結果"})}
+  catch(e){$("share").textContent="請長按上面的圖片分享";setTimeout(()=>$("share").textContent="分享",3000)}
+});
+$("back").addEventListener("click",()=>{$("outCard").hidden=true;$("pick").scrollIntoView({behavior:"smooth"})});
+let resetArmed=false;
+$("reset").addEventListener("click",()=>{
+  if(!resetArmed){resetArmed=true;$("reset").textContent="再按一次確定清空";$("reset").style.borderColor="var(--minus)";$("reset").style.color="var(--minus)";
+    setTimeout(()=>{resetArmed=false;$("reset").textContent="清空，開始新的盤點";$("reset").style.cssText=""},4000);return}
+  S.entries=[];save();resetArmed=false;$("reset").textContent="清空，開始新的盤點";$("reset").style.cssText="";
+  $("outCard").hidden=true;backToPick();renderRows();window.scrollTo({top:0,behavior:"smooth"});
+});
+renderList();renderRows();
+</script>
+</body>
+</html>
