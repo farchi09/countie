@@ -22,32 +22,57 @@
 
 每項商品記「完整箱數＋散裝數量」，不換算總量。貨架上有 2 整箱和 5 盒散裝，就記成 2 箱 5 盒。只接受整數。
 
-## 檔案
+## 專案結構
 
-| 檔案 | 說明 |
+| 路徑 | 說明 |
 | --- | --- |
-| `index.html` | 整個工具，單一檔案，不需要建置或伺服器 |
-| `README.md` | 本說明 |
+| `src/core.js` | 盤點核心邏輯（商品清單、合計、輸入檢查、摘要分區），不碰畫面 |
+| `src/ui.js` | 畫面操作與摘要圖繪製，計算都交給 `core.js` |
+| `src/app.html` | 版面與樣式 |
+| `scripts/build.mjs` | 把 `src/` 組成單一檔案 `dist/index.html` |
+| `scripts/package.mjs` | 打包 zip（只會在測試通過後執行） |
+| `tests/unit/` | 單元測試（Node 內建 `node:test`） |
+| `tests/e2e/` | E2E 測試（Playwright，模擬手機實際點擊） |
+
+## 開發與測試
+
+需要 Node.js 18 以上。
+
+```bash
+npm install
+npx playwright install chromium   # 第一次跑 E2E 前需要
+npm run build      # 產生 dist/index.html
+npm run test:unit  # 單元測試
+npm run test:e2e   # 建置後跑 E2E 測試
+npm test           # 兩種測試都跑
+npm run package    # 先跑全部測試，通過才打包 release/mei-inventory.zip
+```
+
+**單元測試涵蓋**：商品清單完整性、搜尋、數量輸入整理、＋／− 不低於 0、分筆合併、增加與減少、各種錯誤情況（名字空白、格子清空、減少全 0、減少超過現有數量）、刪除後重算、摘要三區分組、暫存讀寫與壞資料。
+
+**E2E 測試涵蓋**（手機尺寸、實際點擊）：搜尋與收起鍵盤、選商品與換商品、輸入格預設 0、＋／− 按鈕、所有錯誤提示的紅框／訊息／跳到欄位與修正後消失、增加／減少切換、加入與合計、刪除需按兩次、摘要圖產生與分享提示、清空需按兩次、重新整理後資料保留、手機寬度不左右捲動。
 
 ## 部署
 
 這是靜態網頁，任何靜態主機都能放。
 
+部署的是 `dist/index.html`（或 zip 裡的 `index.html`），單一檔案即可。
+
 **Netlify（最簡單）**
 1. 登入 Netlify，進入 Sites。
-2. 把整個資料夾（或 zip 解壓後的資料夾）拖進 Deploy 區。
+2. 把 zip 解壓後的資料夾拖進 Deploy 區。
 3. 取得網址，傳給長輩，請他們在手機上「加入主畫面」。
 
 **GitHub Pages**
 1. 推上 GitHub repo。
-2. Settings → Pages → Source 選 `main` branch、根目錄。
+2. 用 GitHub Actions 執行 `npm run build`，把 `dist/` 發布到 Pages；或把 `dist/index.html` 放到 Pages 使用的分支。
 3. 網址為 `https://<帳號>.github.io/<repo 名稱>/`。
 
 放在自己的網站後，「分享」按鈕可以直接叫出 LINE；若手機不支援，長按摘要圖即可儲存或分享。
 
 ## 維護商品清單
 
-商品清單寫在 `index.html` 裡的 `const P=[ ... ]`，每一項格式為：
+商品清單寫在 `src/core.js` 裡的 `const RAW = [ ... ]`，每一項格式為：
 
 ```js
 ["商品名稱","單位"]
@@ -58,8 +83,9 @@
 - **新增商品**：在想要的位置加一行。
 - **下架商品**：刪掉那一行。
 - 清單順序就是下拉選單和摘要圖的順序。
+- 改完請跑 `npm test`；單元測試會檢查商品數量，增減商品時要一併更新測試裡的數字。
 
-> 注意：商品以「在清單中的位置」辨識。新增、刪除或調整順序後，請把 `const KEY="mei-inventory-v2"` 的版本號加一（例如改成 `v3`），讓手機上的舊暫存資料自動作廢，避免數字對到錯的商品。請在沒有人正在盤點時更新。
+> 注意：商品以「在清單中的位置」辨識。新增、刪除或調整順序後，請把 `STORAGE_KEY = "mei-inventory-v2"` 的版本號加一（例如改成 `v3`），讓手機上的舊暫存資料自動作廢，避免數字對到錯的商品。請在沒有人正在盤點時更新。
 
 ## 資料與隱私
 

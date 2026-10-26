@@ -1,0 +1,17 @@
+{
+  "name": "mei-inventory",
+  "version": "1.0.0",
+  "private": true,
+  "description": "給長輩用的倉庫盤點手機網頁",
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test:unit": "node --test tests/unit/*.test.mjs",
+    "test:e2e": "npm run build && playwright test",
+    "test": "npm run test:unit && npm run test:e2e",
+    "package": "npm test && node scripts/package.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0"
+  }
+}
