@@ -10,7 +10,8 @@ const Core = ctx.Core;
 const P = Core.PRODUCTS;
 const byName = n => P.find(p => p.name === n);
 const tomato = byName("淨食番茄"); // 箱盒袋
-const algae = byName("藻一杯");    // 箱盒
+const algae = byName("藻一杯");    // 箱盒袋（原本只有箱盒，現在也有袋）
+const spirulina = byName("優質螺旋藻"); // 箱罐袋
 const entry = (pid, sign, q, id = Math.random()) => ({ id, pid, sign, q, t: 0 });
 const plain = v => JSON.parse(JSON.stringify(v)); // vm 物件與本地物件比較前先轉成一般物件
 
@@ -24,8 +25,11 @@ describe("商品清單", () => {
     assert.ok(byName("金剛密碼"));
     assert.ok(byName("12 種菌"));
   });
-  test("盒袋分列的 4 項是三格", () => {
-    for (const n of ["淨食番茄", "薑一壺", "禪滴咖啡", "禪滴紅茶拿鐵"]) assert.deepEqual(plain(byName(n).units), ["箱", "盒", "袋"]);
+  test("每項商品都有箱、盒、袋三格（螺旋藻為箱、罐、袋）", () => {
+    P.forEach(p => assert.deepEqual(plain(p.units), p.name === "優質螺旋藻" ? ["箱", "罐", "袋"] : ["箱", "盒", "袋"], p.name));
+  });
+  test("原本只有箱袋的商品也有盒", () => {
+    for (const n of ["布道咖哩", "寒天咖啡", "咖啡拿鐵", "禪滴米蛋白"]) assert.deepEqual(plain(byName(n).units), ["箱", "盒", "袋"]);
   });
   test("每項都以箱開頭", () => P.forEach(p => assert.equal(p.units[0], "箱")));
 });
@@ -56,7 +60,7 @@ describe("合計", () => {
   });
   test("10 盒減 3 盒 = 7 盒", () => {
     const es = [entry(algae.id, 1, { 盒: 10 }), entry(algae.id, -1, { 盒: 3 })];
-    assert.deepEqual(plain(Core.totals(es, algae)), { 箱: 0, 盒: 7 });
+    assert.deepEqual(plain(Core.totals(es, algae)), { 箱: 0, 盒: 7, 袋: 0 });
   });
   test("不會算到別的商品", () => {
     const es = [entry(algae.id, 1, { 盒: 10 }), entry(tomato.id, 1, { 盒: 1 })];
@@ -64,7 +68,48 @@ describe("合計", () => {
   });
   test("預覽這筆之後的結果", () => {
     const es = [entry(algae.id, 1, { 盒: 10 })];
-    assert.deepEqual(plain(Core.preview(es, algae, { 箱: "0", 盒: "3" }, -1)), { 箱: 0, 盒: 7 });
+    assert.deepEqual(plain(Core.preview(es, algae, { 箱: "0", 盒: "3", 袋: "0" }, -1)), { 箱: 0, 盒: 7, 袋: 0 });
+  });
+});
+
+describe("袋的增加與減少", () => {
+  test("只填袋，箱盒保持 0：可送出，只記袋", () => {
+    const r = Core.validate({ who: "王", product: algae, sign: 1, entries: [], raw: { 箱: "0", 盒: "0", 袋: "6" } });
+    assert.equal(r.ok, true);
+    assert.deepEqual(plain(r.q), { 袋: 6 });
+  });
+  test("箱、盒、袋同時增加後合計", () => {
+    const es = [entry(algae.id, 1, { 箱: 1, 盒: 2, 袋: 3 }), entry(algae.id, 1, { 袋: 4 })];
+    assert.deepEqual(plain(Core.totals(es, algae)), { 箱: 1, 盒: 2, 袋: 7 });
+  });
+  test("減少袋：6 袋減 2 袋 = 4 袋，箱盒不變", () => {
+    const es = [entry(algae.id, 1, { 箱: 1, 袋: 6 }), entry(algae.id, -1, { 袋: 2 })];
+    assert.deepEqual(plain(Core.totals(es, algae)), { 箱: 1, 盒: 0, 袋: 4 });
+  });
+  test("減少袋超過現有數量 → 指出袋", () => {
+    const es = [entry(algae.id, 1, { 盒: 5, 袋: 1 })];
+    const r = Core.validate({ who: "王", product: algae, sign: -1, entries: es, raw: { 箱: "0", 盒: "0", 袋: "2" } });
+    assert.equal(r.ok, false);
+    assert.deepEqual(plain(r.error.units), ["袋"]);
+    assert.match(r.error.message, /袋目前只有 1，不能減 2/);
+  });
+  test("同時減盒和袋，兩格都檢查", () => {
+    const es = [entry(algae.id, 1, { 盒: 5, 袋: 1 })];
+    assert.equal(Core.validate({ who: "王", product: algae, sign: -1, entries: es, raw: { 箱: "0", 盒: "3", 袋: "1" } }).ok, true);
+    const bad = Core.validate({ who: "王", product: algae, sign: -1, entries: es, raw: { 箱: "0", 盒: "3", 袋: "5" } });
+    assert.deepEqual(plain(bad.error.units), ["袋"]);
+  });
+  test("袋格被清空 → 指出袋", () => {
+    const r = Core.validate({ who: "王", product: algae, sign: 1, entries: [], raw: { 箱: "0", 盒: "1", 袋: "" } });
+    assert.deepEqual(plain(r.error.units), ["袋"]);
+  });
+  test("螺旋藻的第二格是罐，可增可減", () => {
+    const es = [entry(spirulina.id, 1, { 罐: 8 }), entry(spirulina.id, -1, { 罐: 3 })];
+    assert.deepEqual(plain(Core.totals(es, spirulina)), { 箱: 0, 罐: 5, 袋: 0 });
+  });
+  test("舊版只有箱盒的紀錄，換成三格後仍可正確合計", () => {
+    const es = [{ id: 1, pid: algae.id, sign: 1, q: { 箱: 2, 盒: 5 }, t: 0 }];
+    assert.deepEqual(plain(Core.totals(es, algae)), { 箱: 2, 盒: 5, 袋: 0 });
   });
 });
 

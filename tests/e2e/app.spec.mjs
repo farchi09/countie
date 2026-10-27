@@ -70,10 +70,17 @@ test.describe("選商品與輸入格", () => {
     for (const u of ["箱", "盒", "袋"]) await expect(page.locator(`#q-${u}`)).toHaveValue("0");
     await expect(page.locator("#qtys .qty")).toHaveCount(3);
   });
-  test("兩格商品只顯示箱、盒", async ({ page }) => {
-    await pick(page, "藻一杯");
-    await expect(page.locator("#qtys .qty")).toHaveCount(2);
-    await expect(page.locator("#q-袋")).toHaveCount(0);
+  test("每項商品都有箱、盒、袋三格，預設都是 0", async ({ page }) => {
+    for (const name of ["藻一杯", "布道咖哩", "馬鈴薯脆片（芥末口味）"]) {
+      await pick(page, name);
+      await expect(page.locator("#qtys .qty")).toHaveCount(3);
+      for (const u of ["箱", "盒", "袋"]) await expect(page.locator(`#q-${u}`)).toHaveValue("0");
+      await page.locator("#change").tap();
+    }
+  });
+  test("螺旋藻顯示箱、罐、袋", async ({ page }) => {
+    await pick(page, "優質螺旋藻");
+    for (const u of ["箱", "罐", "袋"]) await expect(page.locator(`#q-${u}`)).toHaveValue("0");
   });
   test("「換商品」回到清單", async ({ page }) => {
     await pick(page, "藻一杯");
@@ -115,7 +122,7 @@ test.describe("錯誤提示", () => {
   test("只填盒、箱保持 0 可以直接送出", async ({ page }) => {
     await signIn(page);
     await record(page, "藻一杯", { 盒: "2" });
-    await expect(row(page, "藻一杯")).toContainText("0 箱　2 盒");
+    await expect(row(page, "藻一杯")).toContainText("0 箱　2 盒　0 袋");
     await expect(page.locator("#err")).toBeHidden();
   });
   test("清空的格子：紅框、指出哪幾格、跳到第一格，輸入後消失", async ({ page }) => {
@@ -160,7 +167,7 @@ test.describe("錯誤提示", () => {
     await add(page);
     await expect(page.locator("#err")).toHaveText("盒目前只有 2，不能減 3。");
     await expect(page.locator("#q-盒")).toHaveClass(/bad/);
-    await expect(row(page, "藻一杯")).toContainText("0 箱　2 盒");
+    await expect(row(page, "藻一杯")).toContainText("0 箱　2 盒　0 袋");
   });
 });
 
@@ -215,10 +222,74 @@ test.describe("增加／減少", () => {
     await pick(page, "藻一杯");
     await page.locator("#mSub").tap();
     await setQty(page, "盒", "3");
-    await expect(page.locator("#result")).toHaveText("這筆之後：0 箱　7 盒");
+    await expect(page.locator("#result")).toHaveText("這筆之後：0 箱　7 盒　0 袋");
     await add(page);
-    await expect(row(page, "藻一杯").locator(".row-head")).toContainText("0 箱　7 盒");
+    await expect(row(page, "藻一杯").locator(".row-head")).toContainText("0 箱　7 盒　0 袋");
     await expect(row(page, "藻一杯").locator(".entry .sub")).toContainText("減少 3 盒");
+  });
+});
+
+test.describe("袋的增加／減少", () => {
+  test("只填袋：箱盒保持 0 直接送出", async ({ page }) => {
+    await signIn(page);
+    await record(page, "藻一杯", { 袋: "6" });
+    await expect(page.locator("#err")).toBeHidden();
+    await expect(row(page, "藻一杯").locator(".row-head")).toContainText("0 箱　0 盒　6 袋");
+    await expect(row(page, "藻一杯").locator(".entry")).toContainText("增加 6 袋");
+  });
+  test("袋用 ＋／− 按鈕增減", async ({ page }) => {
+    await pick(page, "藻一杯");
+    const plus = page.locator('button[data-step="1"][data-u="袋"]');
+    await plus.tap(); await plus.tap(); await plus.tap();
+    await expect(page.locator("#q-袋")).toHaveValue("3");
+    await page.locator('button[data-step="-1"][data-u="袋"]').tap();
+    await expect(page.locator("#q-袋")).toHaveValue("2");
+  });
+  test("箱盒袋一次填：1 箱 2 盒 3 袋", async ({ page }) => {
+    await signIn(page);
+    await record(page, "南瓜鬆", { 箱: "1", 盒: "2", 袋: "3" });
+    await expect(row(page, "南瓜鬆").locator(".row-head")).toContainText("1 箱　2 盒　3 袋");
+  });
+  test("6 袋減 2 袋：預覽與結果都是 4 袋，箱盒不變", async ({ page }) => {
+    await signIn(page);
+    await record(page, "藻一杯", { 箱: "1", 袋: "6" });
+    await pick(page, "藻一杯");
+    await expect(page.locator('[data-now="袋"]')).toHaveText("目前 6");
+    await page.locator("#mSub").tap();
+    await setQty(page, "袋", "2");
+    await expect(page.locator("#result")).toHaveText("這筆之後：1 箱　0 盒　4 袋");
+    await add(page);
+    await expect(row(page, "藻一杯").locator(".row-head")).toContainText("1 箱　0 盒　4 袋");
+    await expect(row(page, "藻一杯").locator(".entry .sub")).toContainText("減少 2 袋");
+  });
+  test("減少袋超過現有數量：紅框在袋、不送出", async ({ page }) => {
+    await signIn(page);
+    await record(page, "藻一杯", { 盒: "5", 袋: "1" });
+    await pick(page, "藻一杯");
+    await page.locator("#mSub").tap();
+    await setQty(page, "袋", "2");
+    await add(page);
+    await expect(page.locator("#err")).toHaveText("袋目前只有 1，不能減 2。");
+    await expect(page.locator("#q-袋")).toHaveClass(/bad/);
+    await expect(page.locator("#q-袋")).toBeFocused();
+    await expect(page.locator("#q-盒")).not.toHaveClass(/bad/);
+    await expect(row(page, "藻一杯").locator(".entry")).toHaveCount(1);
+  });
+  test("袋格被清空：紅框、提示、跳到袋", async ({ page }) => {
+    await signIn(page);
+    await pick(page, "藻一杯");
+    await setQty(page, "盒", "1");
+    await setQty(page, "袋", "");
+    await add(page);
+    await expect(page.locator("#err")).toHaveText("「袋」是空的，沒有的話請填 0。");
+    await expect(page.locator("#q-袋")).toHaveClass(/bad/);
+    await expect(page.locator("#q-袋")).toBeFocused();
+  });
+  test("摘要圖納入袋的數量", async ({ page }) => {
+    await signIn(page);
+    await record(page, "藻一杯", { 袋: "3" });
+    await page.locator("#done").tap();
+    await expect(page.locator("#summaryImg")).toBeVisible();
   });
 });
 
@@ -233,7 +304,7 @@ test.describe("刪除紀錄", () => {
     await expect(row(page, "藻一杯").locator(".entry")).toHaveCount(2);
     await del.tap();
     await expect(row(page, "藻一杯").locator(".entry")).toHaveCount(1);
-    await expect(row(page, "藻一杯").locator(".row-head")).toContainText("0 箱　10 盒");
+    await expect(row(page, "藻一杯").locator(".row-head")).toContainText("0 箱　10 盒　0 袋");
   });
   test("刪掉最後一筆，商品回到未盤點", async ({ page }) => {
     await signIn(page);

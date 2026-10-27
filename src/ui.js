@@ -39,9 +39,10 @@
     cur = pid; sign = 1;
     $("chosenName").textContent = P[pid].name;
     $("chosen").hidden = false; $("pickBox").hidden = true; $("plist").hidden = true; $("enter").hidden = false;
-    $("qtys").innerHTML = P[pid].units.map(u => `<div class="qty"><span class="u">${u}</span><span class="now" data-now="${u}"></span>
+    $("qtys").innerHTML = P[pid].units.map(u => `<div class="qty"><span class="u">${u}<span class="now" data-now="${u}"></span></span>
+      <button data-step="-1" data-u="${u}" aria-label="${u}減一">−</button>
       <input type="text" inputmode="numeric" id="q-${u}" data-u="${u}" value="0" aria-label="${u}數量">
-      <button data-step="-1" data-u="${u}" aria-label="${u}減一">−</button><button data-step="1" data-u="${u}" aria-label="${u}加一">＋</button></div>`).join("");
+      <button data-step="1" data-u="${u}" aria-label="${u}加一">＋</button></div>`).join("");
     update();
     $("enter").scrollIntoView({ behavior: "smooth", block: "start" });
   }
