@@ -191,6 +191,21 @@ describe("摘要", () => {
   });
 });
 
+describe("字體大小", () => {
+  test("四個等級：小、標準、大、特大，由小到大", () => {
+    assert.deepEqual(plain(Core.FONT_SCALES.map(f => f.label)), ["小", "標準", "大", "特大"]);
+    const sc = Core.FONT_SCALES.map(f => f.scale);
+    assert.deepEqual(plain(sc), plain([...sc].sort((a, b) => a - b)));
+  });
+  test("沒設定過是標準（1 倍）", () => assert.equal(Core.fontScale(null).scale, 1));
+  test("壞掉的設定回到標準", () => assert.equal(Core.fontScale("亂碼").id, "m"));
+  test("特大是 1.3 倍、小是 0.85 倍", () => {
+    assert.equal(Core.fontScale("xl").scale, 1.3);
+    assert.equal(Core.fontScale("s").scale, 0.85);
+  });
+  test("字體設定與盤點資料分開存", () => assert.notEqual(Core.FONT_KEY, Core.STORAGE_KEY));
+});
+
 describe("格式與暫存", () => {
   test("合計文字", () => assert.equal(Core.formatTotals({ 箱: 2, 盒: 5 }, ["箱", "盒"]), "2 箱　5 盒"));
   test("全部 0 的紀錄顯示「全部 0」", () => assert.equal(Core.formatEntry({ q: {} }), "全部 0"));

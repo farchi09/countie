@@ -19,10 +19,20 @@
 [hidden]{display:none!important}
 body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:20px;line-height:1.5;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px 120px}
-main{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+body{zoom:var(--zoom,1)}
+main{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:16px;container:app/inline-size}
+.gear{min-height:48px;font-size:18px;padding:6px 14px;display:flex;align-items:center;gap:6px}
+.gear[aria-expanded="true"]{background:var(--accent-soft);border-color:var(--accent)}
+.sizes{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.sizes button{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:2px;min-height:84px;padding:8px 4px}
+.sizes button span{font-weight:700;line-height:1}
+.sizes button small{font-size:16px;color:var(--muted);white-space:nowrap}
+.sizes button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.sizes button[aria-pressed="true"] small{color:var(--accent-ink)}
 h1{font-size:30px;margin:0;font-weight:700}
 h2{font-size:22px;margin:0;font-weight:700}
-.top{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.top{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.top .date{margin-right:auto}
 .date{color:var(--muted);font-variant-numeric:tabular-nums}
 .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:14px}
 label{font-weight:500}
@@ -70,12 +80,20 @@ button{font:inherit;cursor:pointer;border-radius:12px;border:2px solid var(--lin
 .bar .primary{max-width:560px;margin:0 auto;display:block}
 #out img{width:100%;border-radius:12px;border:1px solid var(--line)}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-@media (max-width:340px){.qty{grid-template-columns:minmax(44px,auto) 48px minmax(44px,1fr) 48px;gap:6px}.card{padding:14px}}
-@media (max-width:260px){.qty{grid-template-columns:48px minmax(40px,1fr) 48px}.qty .u{grid-column:1/-1;flex-direction:row;align-items:baseline;gap:8px}.card{padding:12px}.mode button{font-size:18px;padding:8px}h1{font-size:26px}}
+@container app (max-width:308px){.qty{grid-template-columns:minmax(44px,auto) 48px minmax(44px,1fr) 48px;gap:6px}.card{padding:14px}}
+@container app (max-width:228px){.qty{grid-template-columns:48px minmax(40px,1fr) 48px}.qty .u{grid-column:1/-1;flex-direction:row;align-items:baseline;gap:8px}.card{padding:12px}.mode button{font-size:18px;padding:8px}h1{font-size:26px}}
 </style>
 
 <main>
-  <div class="top"><h1>倉庫盤點</h1><span class="date" id="today"></span></div>
+  <div class="top"><h1>倉庫盤點</h1><span class="date" id="today"></span>
+    <button class="gear" id="settingsBtn" aria-expanded="false" aria-controls="settings">字體大小</button></div>
+
+  <section class="card" id="settings" hidden>
+    <h2>字體大小</h2>
+    <p class="hint">選一個看得最清楚的大小，下次打開會記住。</p>
+    <div class="sizes" id="sizes"></div>
+    <button id="settingsDone">好了</button>
+  </section>
 
   <section class="card" id="whoCard">
     <label for="who">盤點人</label>

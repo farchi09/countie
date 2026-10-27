@@ -11,6 +11,28 @@
   const dateStr = Core.dateStr(new Date());
 
   $("today").textContent = dateStr;
+
+  /* ---------- 字體大小 ---------- */
+  const fontStore = {
+    get: () => { try { return localStorage.getItem(Core.FONT_KEY); } catch (e) { return null; } },
+    set: v => { try { localStorage.setItem(Core.FONT_KEY, v); } catch (e) { /* 無法暫存時只影響這次 */ } },
+  };
+  const sampleSize = { s: 17, m: 20, l: 24, xl: 28 };
+  function applyFont(id) {
+    const f = Core.fontScale(id);
+    document.documentElement.style.setProperty("--zoom", String(f.scale));
+    document.documentElement.dataset.font = f.id;
+    $("sizes").innerHTML = Core.FONT_SCALES.map(o => `<button data-font="${o.id}" aria-pressed="${o.id === f.id}">
+      <span style="font-size:${sampleSize[o.id]}px">字</span><small>${o.label}</small></button>`).join("");
+  }
+  applyFont(fontStore.get());
+  const toggleSettings = open => { $("settings").hidden = !open; $("settingsBtn").setAttribute("aria-expanded", String(open)); };
+  $("settingsBtn").addEventListener("click", () => toggleSettings($("settings").hidden));
+  $("settingsDone").addEventListener("click", () => toggleSettings(false));
+  $("sizes").addEventListener("click", e => {
+    const b = e.target.closest("button[data-font]"); if (!b) return;
+    fontStore.set(b.dataset.font); applyFont(b.dataset.font);
+  });
   $("who").value = S.who;
   $("who").addEventListener("input", e => {
     S.who = e.target.value.trim(); save();

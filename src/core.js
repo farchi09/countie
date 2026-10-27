@@ -91,6 +91,16 @@ const Core = (() => {
 
   const dateStr = d => `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")}`;
 
+  // 字體大小：整個版面一起縮放（按鈕、間距也跟著變），存在手機上，清空盤點不會重設
+  const FONT_KEY = "mei-inventory-font";
+  const FONT_SCALES = [
+    { id: "s", label: "小", scale: 0.85 },
+    { id: "m", label: "標準", scale: 1 },
+    { id: "l", label: "大", scale: 1.15 },
+    { id: "xl", label: "特大", scale: 1.3 },
+  ];
+  const fontScale = id => FONT_SCALES.find(f => f.id === id) || FONT_SCALES[1];
+
   const loadState = raw => {
     try {
       const s = JSON.parse(raw || "null");
@@ -99,7 +109,7 @@ const Core = (() => {
     return { who: "", entries: [] };
   };
 
-  return { PRODUCTS, UNITS, STORAGE_KEY, search, totals, isCounted, sanitizeQty, step, formatTotals, formatEntry,
+  return { PRODUCTS, UNITS, STORAGE_KEY, FONT_KEY, FONT_SCALES, fontScale, search, totals, isCounted, sanitizeQty, step, formatTotals, formatEntry,
     validate, preview, addEntry, removeEntry, countedIds, summarize, dateStr, loadState };
 })();
 if (typeof module !== "undefined") module.exports = Core;
