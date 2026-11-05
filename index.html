@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>倉庫盤點</title>
 <meta name="claude:viewport-fit-sides" content="cover">
+<meta name="color-scheme" content="only light">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap">
 <style>
@@ -14,22 +15,29 @@
   --accent:#0d6b6e; --accent-ink:#ffffff; --accent-soft:#d9eeee;
   --minus:#a3412b; --minus-soft:#f6e3dd; --warn-soft:#fbefc9; --warn-ink:#6b4c00;
   --font:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  /* 固定淺色：不跟手機的深色／夜間模式變黑底 */
+  color-scheme:only light;
+  /* 不讓手機自動把字放大 */
+  -webkit-text-size-adjust:100%;text-size-adjust:100%;
 }
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#0f1719; --card:#18252a; --ink:#eaf2f1; --muted:#a5b6b9; --line:#2d3f44;
-  --accent:#4fb8b9; --accent-ink:#06282a; --accent-soft:#16393c;
-  --minus:#f08a6f; --minus-soft:#3a201a; --warn-soft:#3a3010; --warn-ink:#f2d58a; color-scheme:dark}}
-:root[data-theme="dark"]{
-  --bg:#0f1719; --card:#18252a; --ink:#eaf2f1; --muted:#a5b6b9; --line:#2d3f44;
-  --accent:#4fb8b9; --accent-ink:#06282a; --accent-soft:#16393c;
-  --minus:#f08a6f; --minus-soft:#3a201a; --warn-soft:#3a3010; --warn-ink:#f2d58a; color-scheme:dark}
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:20px;line-height:1.5;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px 120px}
-main{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+body{zoom:var(--zoom,1)}
+main{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:16px;container:app/inline-size}
+.gear{min-height:48px;font-size:18px;padding:6px 14px;display:flex;align-items:center;gap:6px}
+.gear[aria-expanded="true"]{background:var(--accent-soft);border-color:var(--accent)}
+.sizes{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.sizes button{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:2px;min-height:84px;padding:8px 4px}
+.sizes button span{font-weight:700;line-height:1}
+.sizes button small{font-size:16px;color:var(--muted);white-space:nowrap}
+.sizes button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.sizes button[aria-pressed="true"] small{color:var(--accent-ink)}
 h1{font-size:30px;margin:0;font-weight:700}
 h2{font-size:22px;margin:0;font-weight:700}
-.top{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.top{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.top .date{margin-right:auto}
 .date{color:var(--muted);font-variant-numeric:tabular-nums}
 .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:14px}
 label{font-weight:500}
@@ -49,11 +57,14 @@ button{font:inherit;cursor:pointer;border-radius:12px;border:2px solid var(--lin
 .mode button{font-size:22px;font-weight:700}
 .mode .on-add{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .mode .on-sub{background:var(--minus);border-color:var(--minus);color:var(--card)}
-.qty{display:grid;grid-template-columns:52px 1fr 64px 76px 64px;align-items:center;gap:8px}
-.qty .u{font-size:26px;font-weight:700}
-.qty .now{font-size:16px;color:var(--muted);text-align:right;line-height:1.2}
-.qty>*{grid-row:1}.qty input{text-align:center;font-size:30px;font-weight:700;padding:8px 4px;font-variant-numeric:tabular-nums;grid-column:4}.qty button[data-step="-1"]{grid-column:3}.qty button[data-step="1"]{grid-column:5}
-.qty button{font-size:30px;padding:0;min-height:60px}
+.mode button:not(.on-add):not(.on-sub){color:var(--muted);background:var(--bg)}
+.bad{border-color:var(--minus)!important;box-shadow:0 0 0 3px var(--minus-soft)}
+.primary.sub{background:var(--minus);border-color:var(--minus);color:var(--card)}
+.qty{display:grid;grid-template-columns:minmax(52px,auto) 60px minmax(56px,1fr) 60px;align-items:center;gap:8px}
+.qty .u{font-size:26px;font-weight:700;line-height:1.1;display:flex;flex-direction:column}
+.qty .now{font-size:15px;font-weight:400;color:var(--muted);white-space:nowrap}
+.qty input{min-width:0;text-align:center;font-size:30px;font-weight:700;padding:8px 4px;font-variant-numeric:tabular-nums}
+.qty button{font-size:30px;padding:0;min-height:60px;min-width:0}
 .hint{font-size:18px;color:var(--muted);margin:0}
 .err{font-size:18px;color:var(--minus);font-weight:500;margin:0}
 .result{font-size:20px;background:var(--bg);border-radius:12px;padding:10px 14px}
@@ -68,22 +79,33 @@ button{font:inherit;cursor:pointer;border-radius:12px;border:2px solid var(--lin
 .entry button{min-height:40px;padding:4px 12px;font-size:16px}
 .entry button.sure{background:var(--minus);border-color:var(--minus);color:var(--card)}
 .empty{color:var(--muted);margin:0}
+#reset.sure{border-color:var(--minus);color:var(--minus)}
 .bar{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);
   padding:12px max(16px,env(safe-area-inset-right,0px)) calc(12px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
 .bar .primary{max-width:560px;margin:0 auto;display:block}
 #out img{width:100%;border-radius:12px;border:1px solid var(--line)}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-@media (max-width:380px){.qty{grid-template-columns:44px 1fr 56px 64px 56px}}
+@container app (max-width:308px){.qty{grid-template-columns:minmax(44px,auto) 48px minmax(44px,1fr) 48px;gap:6px}.card{padding:14px}}
+@container app (max-width:228px){.qty{grid-template-columns:48px minmax(40px,1fr) 48px}.qty .u{grid-column:1/-1;flex-direction:row;align-items:baseline;gap:8px}.card{padding:12px}.mode button{font-size:18px;padding:8px}h1{font-size:26px}}
 </style>
 </head>
 <body>
 
 <main>
-  <div class="top"><h1>倉庫盤點</h1><span class="date" id="today"></span></div>
+  <div class="top"><h1>倉庫盤點</h1><span class="date" id="today"></span>
+    <button class="gear" id="settingsBtn" aria-expanded="false" aria-controls="settings">字體大小</button></div>
+
+  <section class="card" id="settings" hidden>
+    <h2>字體大小</h2>
+    <p class="hint">選一個看得最清楚的大小，下次打開會記住。</p>
+    <div class="sizes" id="sizes"></div>
+    <button id="settingsDone">好了</button>
+  </section>
 
   <section class="card" id="whoCard">
     <label for="who">盤點人</label>
     <input type="text" id="who" placeholder="輸入您的名字" autocomplete="name">
+    <p class="err" id="whoErr" hidden>請先填寫盤點人的名字。</p>
   </section>
 
   <section class="card" id="pick">
@@ -97,10 +119,11 @@ button{font:inherit;cursor:pointer;border-radius:12px;border:2px solid var(--lin
 
   <section class="card" id="enter" hidden>
     <h2>2. 填數量</h2>
-    <div class="mode" id="mode" hidden>
+    <div class="mode" id="mode">
       <button id="mAdd">＋ 增加</button><button id="mSub">－ 減少</button>
     </div>
     <div id="qtys"></div>
+    <p class="hint">沒有的格子保持 0 就好。</p>
     <p class="result" id="result" hidden></p>
     <p class="err" id="err" hidden></p>
     <button class="primary" id="addBtn">加入</button>
@@ -125,166 +148,362 @@ button{font:inherit;cursor:pointer;border-radius:12px;border:2px solid var(--lin
 <div class="bar"><button class="primary" id="done">完成，產生摘要圖</button></div>
 
 <script>
-const P=[
-["藻一杯","箱盒"],["抹茶 YOUNG 菌","箱盒"],["Super SOD-like","箱盒"],["金剛密碼","箱盒"],["12 種菌","箱盒"],["超級金剛","箱盒"],["金剛S膠囊","箱盒"],
-["蔓越莓酵素","箱盒"],["顏亮亮膠囊","箱盒"],["恆好睡膠囊","箱盒"],["優質螺旋藻","箱罐"],["優質 MCT 椰子油","箱盒"],["西芹蔬果青汁","箱盒"],
-["西芹羽衣","箱盒"],["西芹粉","箱盒"],["台灣香檬飲","箱盒"],["青汁達人","箱盒"],["甘露飲","箱盒"],["鈣離子養生湯","箱盒"],["布道咖哩","箱袋"],
-["淨食番茄","箱盒袋"],["薑一壺","箱盒袋"],["禪滴咖啡","箱盒袋"],["禪滴紅茶拿鐵","箱盒袋"],["寒天咖啡","箱袋"],["咖啡拿鐵","箱袋"],["咖啡達人","箱盒"],
-["黑藜麥拿鐵","箱盒"],["禪滴米蛋白","箱袋"],["綠咖啡 30 入","箱盒"],["禪滴綠原酸濾掛式咖啡","箱盒"],["神奇米胜肽","箱盒"],["覓玉黃金元素","箱盒"],
-["禪滴安心堅果","箱盒"],["南瓜鬆","箱盒"],["鈣離子養生餅","箱盒"],["明日葉脆餅","箱盒"],["雪蓮子穀麥脆片","箱盒"],["小米松子酥","箱盒"],
-["覓玉爆米花（芥末）","箱盒"],["覓玉爆米花（巧克力）","箱盒"],["覓玉爆米花（檸檬）","箱盒"],["檸檬薄片","箱盒"],["馬鈴薯脆片（芥末口味）","箱盒"]
-].map(([n,u],i)=>({id:i,name:n,units:[...u]}));
-const KEY="mei-inventory-v2";
-const $=id=>document.getElementById(id);
-let S={who:"",entries:[]},cur=null,sign=1,armed=null;
-try{const s=JSON.parse(localStorage.getItem(KEY)||"null");if(s&&Array.isArray(s.entries))S=s}catch(e){}
-const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
-const d=new Date(),dateStr=`${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,"0")}/${String(d.getDate()).padStart(2,"0")}`;
-$("today").textContent=dateStr;
-$("who").value=S.who||"";
-$("who").addEventListener("input",e=>{S.who=e.target.value.trim();save()});
+/* 盤點核心邏輯：不碰畫面，只處理資料，方便單元測試 */
+const Core = (() => {
+  // 每項商品都有三格：箱、盒、袋（沒有的包裝保持 0）。順序即下拉選單與摘要圖的順序。
+  const UNITS = ["箱", "盒", "袋"];
+  // 少數商品的第二格不是「盒」，在這裡另外指定
+  const UNIT_OVERRIDES = { "優質螺旋藻": ["箱", "罐", "袋"] };
+  const NAMES = [
+    "藻一杯", "抹茶 YOUNG 菌", "Super SOD-like", "金剛密碼", "12 種菌", "超級金剛", "金剛S膠囊", "蔓越莓酵素",
+    "顏亮亮膠囊", "恆好睡膠囊", "優質螺旋藻", "優質 MCT 椰子油", "西芹蔬果青汁", "西芹羽衣", "西芹粉", "台灣香檬飲",
+    "青汁達人", "甘露飲", "鈣離子養生湯", "布道咖哩", "淨食番茄", "薑一壺", "禪滴咖啡", "禪滴紅茶拿鐵", "寒天咖啡",
+    "咖啡拿鐵", "咖啡達人", "黑藜麥拿鐵", "禪滴米蛋白", "綠咖啡 30 入", "禪滴綠原酸濾掛式咖啡", "神奇米胜肽",
+    "覓玉黃金元素", "禪滴安心堅果", "南瓜鬆", "鈣離子養生餅", "明日葉脆餅", "雪蓮子穀麥脆片", "小米松子酥",
+    "覓玉爆米花（芥末）", "覓玉爆米花（巧克力）", "覓玉爆米花（檸檬）", "檸檬薄片", "馬鈴薯脆片（芥末口味）",
+  ];
+  const PRODUCTS = NAMES.map((name, id) => ({ id, name, units: (UNIT_OVERRIDES[name] || UNITS).slice() }));
+  // 商品清單有增減或換順序時，版本號要加一，讓手機上的舊暫存作廢
+  const STORAGE_KEY = "mei-inventory-v2";
 
-function totals(pid){const t={};P[pid].units.forEach(u=>t[u]=0);
-  S.entries.filter(e=>e.pid===pid).forEach(e=>{for(const u in e.q)t[u]=(t[u]||0)+e.sign*e.q[u]});return t}
-const counted=pid=>S.entries.some(e=>e.pid===pid);
-const fmt=(t,units)=>units.map(u=>`${t[u]||0} ${u}`).join("　");
+  const search = (products, text) => {
+    const q = String(text || "").trim().toLowerCase();
+    return q ? products.filter(p => p.name.toLowerCase().includes(q)) : products.slice();
+  };
 
-function renderList(){
-  const q=$("q").value.trim().toLowerCase();
-  const items=P.filter(p=>!q||p.name.toLowerCase().includes(q));
-  $("plist").innerHTML=items.length?items.map(p=>`<button data-id="${p.id}"><span>${p.name}</span>${counted(p.id)?'<span class="tag">已盤點</span>':""}</button>`).join("")
-    :'<p class="empty" style="padding:14px">找不到這個商品，換個字試試。</p>';
-}
-$("plist").addEventListener("click",e=>{const b=e.target.closest("button[data-id]");if(b)choose(+b.dataset.id)});
-$("q").addEventListener("input",renderList);
-const closeKb=()=>{$("q").blur()};
-$("q").addEventListener("focus",()=>{$("kbDone").hidden=false;setTimeout(()=>$("pick").scrollIntoView({behavior:"smooth",block:"start"}),300)});
-$("q").addEventListener("blur",()=>{setTimeout(()=>$("kbDone").hidden=true,150)});
-$("q").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();closeKb()}});
-$("q").addEventListener("search",closeKb);
-$("kbDone").addEventListener("click",closeKb);
-$("plist").addEventListener("touchstart",closeKb,{passive:true});
-$("plist").addEventListener("scroll",closeKb,{passive:true});
+  const totals = (entries, product) => {
+    const t = {};
+    product.units.forEach(u => { t[u] = 0; });
+    entries.filter(e => e.pid === product.id).forEach(e => {
+      for (const u in e.q) t[u] = (t[u] || 0) + e.sign * e.q[u];
+    });
+    return t;
+  };
 
-function choose(pid){
-  cur=pid;sign=1;
-  $("chosenName").textContent=P[pid].name;
-  $("chosen").hidden=false;$("pickBox").hidden=true;$("plist").hidden=true;$("enter").hidden=false;
-  $("mode").hidden=!counted(pid);
-  $("qtys").innerHTML=P[pid].units.map(u=>`<div class="qty"><span class="u">${u}</span><span class="now" data-now="${u}"></span>
-    <input type="text" inputmode="numeric" id="q-${u}" data-u="${u}" value="" placeholder="0" aria-label="${u}數量">
-    <button data-step="-1" data-u="${u}" aria-label="${u}減一">−</button><button data-step="1" data-u="${u}" aria-label="${u}加一">＋</button></div>`).join("");
-  update();$("enter").scrollIntoView({behavior:"smooth",block:"start"});
-}
-function backToPick(){cur=null;$("chosen").hidden=true;$("pickBox").hidden=false;$("plist").hidden=false;$("enter").hidden=true;$("q").value="";renderList()}
-$("change").addEventListener("click",backToPick);
-$("mAdd").addEventListener("click",()=>{sign=1;update()});
-$("mSub").addEventListener("click",()=>{sign=-1;update()});
-$("qtys").addEventListener("click",e=>{const b=e.target.closest("button[data-step]");if(!b)return;
-  const i=$("q-"+b.dataset.u);i.value=Math.max(0,(parseInt(i.value)||0)+ +b.dataset.step)||"";update()});
-$("qtys").addEventListener("input",e=>{if(e.target.matches("input")){e.target.value=e.target.value.replace(/\D/g,"").slice(0,4);update()}});
+  const isCounted = (entries, pid) => entries.some(e => e.pid === pid);
 
-function readQ(){const q={};P[cur].units.forEach(u=>{const v=parseInt($("q-"+u).value)||0;if(v)q[u]=v});return q}
-function update(){
-  if(cur==null)return;
-  const has=counted(cur),t=totals(cur),q=readQ();
-  $("mAdd").className=sign>0?"on-add":"";$("mSub").className=sign<0?"on-sub":"";
-  document.querySelectorAll("[data-now]").forEach(el=>el.textContent=has?`目前 ${t[el.dataset.now]||0}`:"");
-  $("addBtn").textContent=sign<0?"確定減少":"加入";
-  const after={};P[cur].units.forEach(u=>after[u]=(t[u]||0)+sign*(q[u]||0));
-  if(has&&Object.keys(q).length){$("result").hidden=false;$("result").innerHTML=`這筆之後：<b>${fmt(after,P[cur].units)}</b>`}else $("result").hidden=true;
-  $("err").hidden=true;
-}
-$("addBtn").addEventListener("click",()=>{
-  const q=readQ();
-  if(!Object.keys(q).length){showErr("請先填數量，至少一格不是 0。");return}
-  if(sign<0){const t=totals(cur);for(const u in q)if(q[u]>(t[u]||0)){showErr(`${u}目前只有 ${t[u]||0}，不能減 ${q[u]}。`);return}}
-  S.entries.push({id:Date.now()+Math.random(),pid:cur,sign,q,t:Date.now()});save();
-  backToPick();renderRows();$("pick").scrollIntoView({behavior:"smooth",block:"start"});
-});
-function showErr(m){$("err").textContent=m;$("err").hidden=false}
+  // 輸入框內容整理：只留數字、去掉開頭多餘的 0、最多 4 位
+  const sanitizeQty = s => String(s ?? "").replace(/\D/g, "").replace(/^0+(?=\d)/, "").slice(0, 4);
 
-function renderRows(){
-  const pids=[...new Set(S.entries.map(e=>e.pid))].sort((a,b)=>a-b);
-  $("cnt").textContent=pids.length?`（${pids.length} 項）`:"";
-  if(!pids.length){$("rows").innerHTML='<p class="empty">還沒有資料。從上面選一個商品開始。</p>';return}
-  $("rows").innerHTML=pids.map(pid=>{const p=P[pid],t=totals(pid);
-    const es=S.entries.filter(e=>e.pid===pid).map(e=>{const s=Object.entries(e.q).map(([u,v])=>`${v} ${u}`).join(" ");
-      const tm=new Date(e.t),hm=`${tm.getHours()}:${String(tm.getMinutes()).padStart(2,"0")}`;
-      return `<div class="entry"><span class="${e.sign<0?"sub":""}">${hm}　${e.sign<0?"減少":"增加"} ${s}</span>
-        <button data-del="${e.id}" class="${armed===e.id?"sure":""}">${armed===e.id?"確定刪除":"刪除"}</button></div>`}).join("");
-    return `<div class="row"><div class="row-head"><span>${p.name}</span><b>${fmt(t,p.units)}</b></div>${es}</div>`}).join("");
-}
-$("rows").addEventListener("click",e=>{const b=e.target.closest("button[data-del]");if(!b)return;const id=+b.dataset.del;
-  if(armed===id){S.entries=S.entries.filter(x=>x.id!==id);armed=null;save();renderList()}else armed=id;renderRows()});
+  const step = (s, delta) => String(Math.max(0, (parseInt(s, 10) || 0) + delta));
 
-/* ---- summary image ---- */
-function draw(){
-  const pids=[...new Set(S.entries.map(e=>e.pid))].sort((a,b)=>a-b);
-  const has=pids.filter(pid=>Object.values(totals(pid)).some(v=>v>0));
-  const zero=pids.filter(pid=>!has.includes(pid));
-  const none=P.filter(p=>!pids.includes(p.id)).map(p=>p.name);
-  const W=1080,pad=64,rowH=96,F='"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif';
-  const c=document.createElement("canvas"),x=c.getContext("2d");
-  const wrap=(txt,max,font)=>{x.font=font;const out=[];let line="";for(const part of txt.split("、")){const t=line?line+"、"+part:part;if(x.measureText(t).width>max&&line){out.push(line+"、");line=part}else line=t}if(line)out.push(line);return out};
-  const zLines=zero.length?wrap(zero.map(i=>P[i].name).join("、"),W-pad*2-48,`36px ${F}`):[];
-  const nLines=none.length?wrap(none.join("、"),W-pad*2-48,`32px ${F}`):[];
-  let H=pad+70+60+40+rowH*Math.max(has.length,1)+40;
-  if(zLines.length)H+=120+zLines.length*54;
-  if(nLines.length)H+=110+nLines.length*48;
-  H+=pad;
-  c.width=W;c.height=H;
-  x.fillStyle="#ffffff";x.fillRect(0,0,W,H);
-  x.fillStyle="#0d6b6e";x.fillRect(0,0,W,16);
-  let y=pad+40;
-  x.fillStyle="#15242a";x.font=`bold 64px ${F}`;x.textBaseline="alphabetic";x.fillText("倉庫盤點結果",pad,y+20);
-  x.font=`44px ${F}`;x.textAlign="right";x.fillStyle="#52646b";x.fillText(dateStr,W-pad,y+20);x.textAlign="left";
-  y+=80;x.font=`36px ${F}`;x.fillText(`共 ${pids.length} 項商品${S.who?"・盤點人："+S.who:""}`,pad,y);
-  y+=40;
-  x.fillStyle="#15242a";x.fillRect(pad,y,W-pad*2,3);
-  if(!has.length){y+=rowH;x.fillStyle="#52646b";x.font=`40px ${F}`;x.fillText("沒有庫存大於 0 的商品",pad,y-30)}
-  has.forEach((pid,i)=>{const p=P[pid],t=totals(pid);
-    if(i%2){x.fillStyle="#eef4f3";x.fillRect(pad,y+3,W-pad*2,rowH)}
-    const by=y+rowH/2+18;
-    x.fillStyle="#15242a";x.font=`44px ${F}`;
-    let nm=p.name;while(x.measureText(nm).width>W-pad*2-430&&nm.length>2)nm=nm.slice(0,-1);if(nm!==p.name)nm+="…";
-    x.fillText(nm,pad+16,by);
-    x.textAlign="right";let rx=W-pad-16;
-    [...p.units].reverse().forEach(u=>{x.font=`32px ${F}`;x.fillStyle="#52646b";x.fillText(u,rx,by);rx-=40;
-      x.font=`bold 52px ${F}`;x.fillStyle=(t[u]||0)?"#15242a":"#9aa9ad";x.fillText(String(t[u]||0),rx,by);rx-=x.measureText(String(t[u]||0)).width+28});
-    x.textAlign="left";y+=rowH;x.fillStyle="#cfd9d8";x.fillRect(pad,y,W-pad*2,2)});
-  if(!has.length)y+=rowH;
-  y+=40;
-  const box=(lines,title,bg,ink,font,lh)=>{const h=90+lines.length*lh;x.fillStyle=bg;roundRect(pad,y,W-pad*2,h,20);
-    x.fillStyle=ink;x.font=`bold 38px ${F}`;x.fillText(title,pad+24,y+60);x.font=font;lines.forEach((l,i)=>x.fillText(l,pad+24,y+60+lh*(i+1)));y+=h+30};
-  const roundRect=(a,b,w,h,r)=>{x.beginPath();x.moveTo(a+r,b);x.arcTo(a+w,b,a+w,b+h,r);x.arcTo(a+w,b+h,a,b+h,r);x.arcTo(a,b+h,a,b,r);x.arcTo(a,b,a+w,b,r);x.fill()};
-  if(zLines.length)box(zLines,`庫存為 0（${zero.length} 項）`,"#fbefc9","#6b4c00",`36px ${F}`,54);
-  if(nLines.length)box(nLines,`這次沒有盤點（${none.length} 項）`,"#eef2f1","#52646b",`32px ${F}`,48);
-  return c;
-}
-let lastBlob=null;
-$("done").addEventListener("click",async()=>{
-  if(!S.entries.length){$("outCard").hidden=false;$("out").innerHTML='<p class="err">還沒有盤點資料，先加入至少一項商品。</p>';$("outCard").scrollIntoView({behavior:"smooth"});return}
-  try{await document.fonts.load('44px "Noto Sans TC"')}catch(e){}
-  const c=draw();const url=c.toDataURL("image/png");
-  c.toBlob(b=>lastBlob=b,"image/png");
-  $("out").innerHTML=`<img src="${url}" alt="盤點摘要圖">`;
-  $("outCard").hidden=false;$("outCard").scrollIntoView({behavior:"smooth",block:"start"});
-});
-$("share").addEventListener("click",async()=>{
-  try{if(!lastBlob||!navigator.canShare)throw 0;const f=new File([lastBlob],`盤點_${dateStr.replace(/\//g,"")}.png`,{type:"image/png"});
-    if(!navigator.canShare({files:[f]}))throw 0;await navigator.share({files:[f],title:"倉庫盤點結果"})}
-  catch(e){$("share").textContent="請長按上面的圖片分享";setTimeout(()=>$("share").textContent="分享",3000)}
-});
-$("back").addEventListener("click",()=>{$("outCard").hidden=true;$("pick").scrollIntoView({behavior:"smooth"})});
-let resetArmed=false;
-$("reset").addEventListener("click",()=>{
-  if(!resetArmed){resetArmed=true;$("reset").textContent="再按一次確定清空";$("reset").style.borderColor="var(--minus)";$("reset").style.color="var(--minus)";
-    setTimeout(()=>{resetArmed=false;$("reset").textContent="清空，開始新的盤點";$("reset").style.cssText=""},4000);return}
-  S.entries=[];save();resetArmed=false;$("reset").textContent="清空，開始新的盤點";$("reset").style.cssText="";
-  $("outCard").hidden=true;backToPick();renderRows();window.scrollTo({top:0,behavior:"smooth"});
-});
-renderList();renderRows();
+  const formatTotals = (t, units) => units.map(u => `${t[u] || 0} ${u}`).join("　");
+
+  const formatEntry = e => Object.entries(e.q).map(([u, v]) => `${v} ${u}`).join(" ") || "全部 0";
+
+  /**
+   * 檢查一筆輸入。raw = { 箱: "2", 盒: "" }（輸入框原始字串）
+   * 回傳 { ok, q, error: { field: "who" | "qty", units?, message } }
+   */
+  const validate = ({ who, product, raw, sign, entries }) => {
+    if (!String(who || "").trim()) {
+      return { ok: false, error: { field: "who", message: "請先填寫盤點人的名字。" } };
+    }
+    const empty = product.units.filter(u => String(raw[u] ?? "").trim() === "");
+    if (empty.length) {
+      return { ok: false, error: { field: "qty", units: empty, message: `「${empty.join("、")}」是空的，沒有的話請填 0。` } };
+    }
+    const q = {};
+    product.units.forEach(u => { const v = parseInt(raw[u], 10) || 0; if (v) q[u] = v; });
+    if (sign < 0) {
+      if (!Object.keys(q).length) {
+        return { ok: false, error: { field: "qty", units: product.units.slice(), message: "減少的數量都是 0，請填要減少幾個。" } };
+      }
+      const t = totals(entries, product);
+      for (const u of product.units) {
+        if ((q[u] || 0) > t[u]) {
+          return { ok: false, error: { field: "qty", units: [u], message: `${u}目前只有 ${t[u]}，不能減 ${q[u]}。` } };
+        }
+      }
+    }
+    return { ok: true, q };
+  };
+
+  const preview = (entries, product, raw, sign) => {
+    const t = totals(entries, product), after = {};
+    product.units.forEach(u => { after[u] = t[u] + sign * (parseInt(raw[u], 10) || 0); });
+    return after;
+  };
+
+  const addEntry = (entries, { pid, sign, q, t, id }) => entries.concat([{ id, pid, sign, q, t }]);
+  const removeEntry = (entries, id) => entries.filter(e => e.id !== id);
+
+  const countedIds = entries => [...new Set(entries.map(e => e.pid))].sort((a, b) => a - b);
+
+  // 摘要圖的三個區塊
+  const summarize = (entries, products) => {
+    const ids = countedIds(entries);
+    const has = ids.filter(id => Object.values(totals(entries, products[id])).some(v => v > 0));
+    const zero = ids.filter(id => !has.includes(id));
+    const none = products.filter(p => !ids.includes(p.id)).map(p => p.id);
+    return { counted: ids, has, zero, none };
+  };
+
+  const dateStr = d => `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")}`;
+
+  // 字體大小：整個版面一起縮放（按鈕、間距也跟著變），存在手機上，清空盤點不會重設
+  const FONT_KEY = "mei-inventory-font";
+  const FONT_SCALES = [
+    { id: "s", label: "小", scale: 0.85 },
+    { id: "m", label: "標準", scale: 1 },
+    { id: "l", label: "大", scale: 1.15 },
+    { id: "xl", label: "特大", scale: 1.3 },
+  ];
+  const fontScale = id => FONT_SCALES.find(f => f.id === id) || FONT_SCALES[1];
+
+  const loadState = raw => {
+    try {
+      const s = JSON.parse(raw || "null");
+      if (s && Array.isArray(s.entries)) return { who: typeof s.who === "string" ? s.who : "", entries: s.entries };
+    } catch (e) { /* 壞掉的暫存就當作沒有 */ }
+    return { who: "", entries: [] };
+  };
+
+  return { PRODUCTS, UNITS, STORAGE_KEY, FONT_KEY, FONT_SCALES, fontScale, search, totals, isCounted, sanitizeQty, step, formatTotals, formatEntry,
+    validate, preview, addEntry, removeEntry, countedIds, summarize, dateStr, loadState };
+})();
+if (typeof module !== "undefined") module.exports = Core;
 </script>
+<script>
+/* 畫面操作：所有計算交給 Core */
+(() => {
+  const P = Core.PRODUCTS;
+  const $ = id => document.getElementById(id);
+  const store = {
+    get: () => { try { return localStorage.getItem(Core.STORAGE_KEY); } catch (e) { return null; } },
+    set: v => { try { localStorage.setItem(Core.STORAGE_KEY, v); } catch (e) { /* 無法暫存時照常使用 */ } },
+  };
+  let S = Core.loadState(store.get()), cur = null, sign = 1, armed = null, resetArmed = false, resetTimer = null, lastBlob = null;
+  const save = () => store.set(JSON.stringify(S));
+  const dateStr = Core.dateStr(new Date());
+
+  $("today").textContent = dateStr;
+
+  /* ---------- 字體大小 ---------- */
+  const fontStore = {
+    get: () => { try { return localStorage.getItem(Core.FONT_KEY); } catch (e) { return null; } },
+    set: v => { try { localStorage.setItem(Core.FONT_KEY, v); } catch (e) { /* 無法暫存時只影響這次 */ } },
+  };
+  const sampleSize = { s: 17, m: 20, l: 24, xl: 28 };
+  function applyFont(id) {
+    const f = Core.fontScale(id);
+    document.documentElement.style.setProperty("--zoom", String(f.scale));
+    document.documentElement.dataset.font = f.id;
+    $("sizes").innerHTML = Core.FONT_SCALES.map(o => `<button data-font="${o.id}" aria-pressed="${o.id === f.id}">
+      <span style="font-size:${sampleSize[o.id]}px">字</span><small>${o.label}</small></button>`).join("");
+  }
+  applyFont(fontStore.get());
+  const toggleSettings = open => { $("settings").hidden = !open; $("settingsBtn").setAttribute("aria-expanded", String(open)); };
+  $("settingsBtn").addEventListener("click", () => toggleSettings($("settings").hidden));
+  $("settingsDone").addEventListener("click", () => toggleSettings(false));
+  $("sizes").addEventListener("click", e => {
+    const b = e.target.closest("button[data-font]"); if (!b) return;
+    fontStore.set(b.dataset.font); applyFont(b.dataset.font);
+  });
+  $("who").value = S.who;
+  $("who").addEventListener("input", e => {
+    S.who = e.target.value.trim(); save();
+    $("who").classList.remove("bad"); $("whoErr").hidden = true;
+  });
+
+  /* ---------- 選商品 ---------- */
+  function renderList() {
+    const items = Core.search(P, $("q").value);
+    $("plist").innerHTML = items.length
+      ? items.map(p => `<button data-id="${p.id}"><span>${p.name}</span>${Core.isCounted(S.entries, p.id) ? '<span class="tag">已盤點</span>' : ""}</button>`).join("")
+      : '<p class="empty" id="noMatch" style="padding:14px">找不到這個商品，換個字試試。</p>';
+  }
+  const closeKb = () => $("q").blur();
+  $("q").addEventListener("input", renderList);
+  $("q").addEventListener("focus", () => { $("kbDone").hidden = false; setTimeout(() => $("pick").scrollIntoView({ behavior: "smooth", block: "start" }), 300); });
+  $("q").addEventListener("blur", () => setTimeout(() => { $("kbDone").hidden = true; }, 150));
+  $("q").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); closeKb(); } });
+  $("q").addEventListener("search", closeKb);
+  $("kbDone").addEventListener("click", closeKb);
+  $("plist").addEventListener("touchstart", closeKb, { passive: true });
+  $("plist").addEventListener("scroll", closeKb, { passive: true });
+  $("plist").addEventListener("click", e => { const b = e.target.closest("button[data-id]"); if (b) choose(+b.dataset.id); });
+
+  function choose(pid) {
+    cur = pid; sign = 1;
+    $("chosenName").textContent = P[pid].name;
+    $("chosen").hidden = false; $("pickBox").hidden = true; $("plist").hidden = true; $("enter").hidden = false;
+    $("qtys").innerHTML = P[pid].units.map(u => `<div class="qty"><span class="u">${u}<span class="now" data-now="${u}"></span></span>
+      <button data-step="-1" data-u="${u}" aria-label="${u}減一">−</button>
+      <input type="text" inputmode="numeric" id="q-${u}" data-u="${u}" value="0" aria-label="${u}數量">
+      <button data-step="1" data-u="${u}" aria-label="${u}加一">＋</button></div>`).join("");
+    update();
+    $("enter").scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+  function backToPick() {
+    cur = null; $("chosen").hidden = true; $("pickBox").hidden = false; $("plist").hidden = false; $("enter").hidden = true;
+    $("q").value = ""; renderList();
+  }
+  $("change").addEventListener("click", backToPick);
+
+  /* ---------- 填數量 ---------- */
+  const raw = () => Object.fromEntries(P[cur].units.map(u => [u, $("q-" + u).value]));
+  $("mAdd").addEventListener("click", () => { sign = 1; update(); });
+  $("mSub").addEventListener("click", () => { sign = -1; update(); });
+  $("qtys").addEventListener("click", e => {
+    const b = e.target.closest("button[data-step]"); if (!b) return;
+    const i = $("q-" + b.dataset.u); i.value = Core.step(i.value, +b.dataset.step); i.classList.remove("bad"); update();
+  });
+  $("qtys").addEventListener("input", e => {
+    if (!e.target.matches("input")) return;
+    e.target.value = Core.sanitizeQty(e.target.value); e.target.classList.remove("bad"); update();
+  });
+  $("qtys").addEventListener("focusin", e => { if (e.target.matches("input")) setTimeout(() => e.target.select(), 0); });
+
+  function update() {
+    if (cur == null) return;
+    const p = P[cur], has = Core.isCounted(S.entries, cur), t = Core.totals(S.entries, p);
+    $("mAdd").className = sign > 0 ? "on-add" : ""; $("mSub").className = sign < 0 ? "on-sub" : "";
+    $("mAdd").textContent = (sign > 0 ? "✓ " : "") + "＋ 增加";
+    $("mSub").textContent = (sign < 0 ? "✓ " : "") + "－ 減少";
+    $("addBtn").classList.toggle("sub", sign < 0);
+    $("addBtn").textContent = sign < 0 ? "確定減少" : "加入";
+    document.querySelectorAll("[data-now]").forEach(el => { el.textContent = has ? `目前 ${t[el.dataset.now]}` : ""; });
+    const r = raw(), anyQty = p.units.some(u => (parseInt(r[u], 10) || 0) > 0);
+    if (has && anyQty) {
+      $("result").hidden = false;
+      $("result").innerHTML = `這筆之後：<b>${Core.formatTotals(Core.preview(S.entries, p, r, sign), p.units)}</b>`;
+    } else $("result").hidden = true;
+    $("err").hidden = true;
+  }
+
+  function showError(err) {
+    if (err.field === "who") {
+      $("who").classList.add("bad"); $("whoErr").textContent = err.message; $("whoErr").hidden = false;
+      $("who").scrollIntoView({ behavior: "smooth", block: "center" }); $("who").focus({ preventScroll: true });
+      return;
+    }
+    err.units.forEach(u => $("q-" + u).classList.add("bad"));
+    $("err").textContent = err.message; $("err").hidden = false;
+    const f = $("q-" + err.units[0]);
+    f.scrollIntoView({ behavior: "smooth", block: "center" }); f.focus({ preventScroll: true });
+  }
+
+  $("addBtn").addEventListener("click", () => {
+    const res = Core.validate({ who: $("who").value, product: P[cur], raw: raw(), sign, entries: S.entries });
+    if (!res.ok) { showError(res.error); return; }
+    S.entries = Core.addEntry(S.entries, { id: Date.now() + Math.random(), pid: cur, sign, q: res.q, t: Date.now() });
+    save(); backToPick(); renderRows();
+    $("pick").scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+
+  /* ---------- 已盤點清單 ---------- */
+  function renderRows() {
+    const ids = Core.countedIds(S.entries);
+    $("cnt").textContent = ids.length ? `（${ids.length} 項）` : "";
+    if (!ids.length) { $("rows").innerHTML = '<p class="empty">還沒有資料。從上面選一個商品開始。</p>'; return; }
+    $("rows").innerHTML = ids.map(pid => {
+      const p = P[pid];
+      const es = S.entries.filter(e => e.pid === pid).map(e => {
+        const tm = new Date(e.t), hm = `${tm.getHours()}:${String(tm.getMinutes()).padStart(2, "0")}`;
+        return `<div class="entry"><span class="${e.sign < 0 ? "sub" : ""}">${hm}　${e.sign < 0 ? "減少" : "增加"} ${Core.formatEntry(e)}</span>
+          <button data-del="${e.id}" class="${armed === e.id ? "sure" : ""}">${armed === e.id ? "確定刪除" : "刪除"}</button></div>`;
+      }).join("");
+      return `<div class="row" data-pid="${pid}"><div class="row-head"><span>${p.name}</span><b>${Core.formatTotals(Core.totals(S.entries, p), p.units)}</b></div>${es}</div>`;
+    }).join("");
+  }
+  $("rows").addEventListener("click", e => {
+    const b = e.target.closest("button[data-del]"); if (!b) return;
+    const id = +b.dataset.del;
+    if (armed === id) { S.entries = Core.removeEntry(S.entries, id); armed = null; save(); renderList(); } else armed = id;
+    renderRows();
+  });
+
+  /* ---------- 摘要圖 ---------- */
+  function draw() {
+    const sum = Core.summarize(S.entries, P);
+    const W = 1080, pad = 64, rowH = 96, F = '"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif';
+    const c = document.createElement("canvas"), x = c.getContext("2d");
+    const wrap = (txt, max, font) => {
+      x.font = font; const out = []; let line = "";
+      for (const part of txt.split("、")) { const t = line ? line + "、" + part : part; if (x.measureText(t).width > max && line) { out.push(line + "、"); line = part; } else line = t; }
+      if (line) out.push(line); return out;
+    };
+    const zLines = sum.zero.length ? wrap(sum.zero.map(i => P[i].name).join("、"), W - pad * 2 - 48, `36px ${F}`) : [];
+    let H = pad + 170 + rowH * Math.max(sum.has.length, 1) + 40;
+    if (zLines.length) H += 120 + zLines.length * 54;
+    c.width = W; c.height = H + pad;
+    const roundRect = (a, b, w, h, r) => { x.beginPath(); x.moveTo(a + r, b); x.arcTo(a + w, b, a + w, b + h, r); x.arcTo(a + w, b + h, a, b + h, r); x.arcTo(a, b + h, a, b, r); x.arcTo(a, b, a + w, b, r); x.fill(); };
+    x.fillStyle = "#ffffff"; x.fillRect(0, 0, W, c.height);
+    x.fillStyle = "#0d6b6e"; x.fillRect(0, 0, W, 16);
+    let y = pad + 40;
+    x.fillStyle = "#15242a"; x.font = `bold 64px ${F}`; x.fillText("倉庫盤點結果", pad, y + 20);
+    x.font = `44px ${F}`; x.textAlign = "right"; x.fillStyle = "#52646b"; x.fillText(dateStr, W - pad, y + 20); x.textAlign = "left";
+    y += 80; x.font = `36px ${F}`; x.fillText(`共 ${sum.counted.length} 項商品${S.who ? "・盤點人：" + S.who : ""}`, pad, y);
+    y += 40; x.fillStyle = "#15242a"; x.fillRect(pad, y, W - pad * 2, 3);
+    if (!sum.has.length) { x.fillStyle = "#52646b"; x.font = `40px ${F}`; x.fillText("沒有庫存大於 0 的商品", pad, y + rowH - 30); y += rowH; }
+    sum.has.forEach((pid, i) => {
+      const p = P[pid], t = Core.totals(S.entries, p);
+      if (i % 2) { x.fillStyle = "#eef4f3"; x.fillRect(pad, y + 3, W - pad * 2, rowH); }
+      const by = y + rowH / 2 + 18;
+      x.fillStyle = "#15242a"; x.font = `44px ${F}`;
+      let nm = p.name; while (x.measureText(nm).width > W - pad * 2 - 430 && nm.length > 2) nm = nm.slice(0, -1);
+      if (nm !== p.name) nm += "…";
+      x.fillText(nm, pad + 16, by);
+      x.textAlign = "right"; let rx = W - pad - 16;
+      [...p.units].reverse().forEach(u => {
+        x.font = `32px ${F}`; x.fillStyle = "#52646b"; x.fillText(u, rx, by); rx -= 40;
+        x.font = `bold 52px ${F}`; x.fillStyle = t[u] ? "#15242a" : "#9aa9ad"; x.fillText(String(t[u]), rx, by); rx -= x.measureText(String(t[u])).width + 28;
+      });
+      x.textAlign = "left"; y += rowH; x.fillStyle = "#cfd9d8"; x.fillRect(pad, y, W - pad * 2, 2);
+    });
+    y += 40;
+    const box = (lines, title, bg, ink, font, lh) => {
+      const h = 90 + lines.length * lh; x.fillStyle = bg; roundRect(pad, y, W - pad * 2, h, 20);
+      x.fillStyle = ink; x.font = `bold 38px ${F}`; x.fillText(title, pad + 24, y + 60);
+      x.font = font; lines.forEach((l, i) => x.fillText(l, pad + 24, y + 60 + lh * (i + 1))); y += h + 30;
+    };
+    if (zLines.length) box(zLines, `庫存為 0（${sum.zero.length} 項）`, "#fbefc9", "#6b4c00", `36px ${F}`, 54);
+    c.dataset.sections = ["list", ...(zLines.length ? ["zero"] : [])].join(",");
+    return c;
+  }
+
+  $("done").addEventListener("click", async () => {
+    if (!S.entries.length) {
+      $("outCard").hidden = false;
+      $("out").innerHTML = '<p class="err" id="noData">還沒有盤點資料，先加入至少一項商品。</p>';
+      $("outCard").scrollIntoView({ behavior: "smooth" }); return;
+    }
+    const res = Core.validate({ who: $("who").value, product: { units: [] }, raw: {}, sign: 1, entries: [] });
+    if (!res.ok) { showError(res.error); return; }
+    try { await Promise.race([document.fonts.load('44px "Noto Sans TC"'), new Promise(r => setTimeout(r, 1500))]); } catch (e) { /* 字型載不到就用系統字 */ }
+    const c = draw();
+    c.toBlob(b => { lastBlob = b; }, "image/png");
+    $("out").innerHTML = `<img id="summaryImg" src="${c.toDataURL("image/png")}" alt="盤點摘要圖" data-sections="${c.dataset.sections}">`;
+    $("outCard").hidden = false; $("outCard").scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+  $("share").addEventListener("click", async () => {
+    try {
+      if (!lastBlob || !navigator.canShare) throw 0;
+      const f = new File([lastBlob], `盤點_${dateStr.replace(/\//g, "")}.png`, { type: "image/png" });
+      if (!navigator.canShare({ files: [f] })) throw 0;
+      await navigator.share({ files: [f], title: "倉庫盤點結果" });
+    } catch (e) {
+      $("share").textContent = "請長按上面的圖片分享";
+      setTimeout(() => { $("share").textContent = "分享"; }, 3000);
+    }
+  });
+  $("back").addEventListener("click", () => { $("outCard").hidden = true; $("pick").scrollIntoView({ behavior: "smooth" }); });
+
+  const resetLabel = () => { resetArmed = false; $("reset").textContent = "清空，開始新的盤點"; $("reset").classList.remove("sure"); };
+  $("reset").addEventListener("click", () => {
+    clearTimeout(resetTimer);
+    if (!resetArmed) {
+      resetArmed = true; $("reset").textContent = "再按一次確定清空"; $("reset").classList.add("sure");
+      resetTimer = setTimeout(resetLabel, 4000); return;
+    }
+    S.entries = []; save(); resetLabel();
+    $("outCard").hidden = true; backToPick(); renderRows(); window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+
+  renderList(); renderRows();
+})();
+</script>
+
 </body>
 </html>
