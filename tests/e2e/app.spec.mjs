@@ -317,6 +317,26 @@ test.describe("刪除紀錄", () => {
 });
 
 test.describe("摘要圖", () => {
+  test("摘要圖不列出沒盤點的商品，只有清單與庫存為 0", async ({ page }) => {
+    await signIn(page);
+    await record(page, "藻一杯", { 盒: "2" });
+    await record(page, "南瓜鬆", {});
+    await page.locator("#done").tap();
+    await expect(page.locator("#summaryImg")).toHaveAttribute("data-sections", "list,zero");
+  });
+  test("全部有庫存時，摘要圖只有清單", async ({ page }) => {
+    await signIn(page);
+    await record(page, "藻一杯", { 盒: "2" });
+    await page.locator("#done").tap();
+    await expect(page.locator("#summaryImg")).toHaveAttribute("data-sections", "list");
+  });
+  test("摘要圖高度只跟盤點的商品數有關，與沒盤點的 43 項無關", async ({ page }) => {
+    await signIn(page);
+    await record(page, "藻一杯", { 盒: "2" });
+    await page.locator("#done").tap();
+    const h = await page.locator("#summaryImg").evaluate(el => el.naturalHeight);
+    expect(h).toBeLessThan(600);
+  });
   test("沒有資料時提示先加入商品", async ({ page }) => {
     await page.locator("#done").tap();
     await expect(page.locator("#noData")).toBeVisible();
@@ -330,16 +350,19 @@ test.describe("摘要圖", () => {
     await expect(page.locator("#whoErr")).toBeVisible();
     await expect(page.locator("#summaryImg")).toHaveCount(0);
   });
-  test("產生直式摘要圖，寬 1080", async ({ page }) => {
+  test("摘要圖寬 1080，商品越多圖越長", async ({ page }) => {
     await signIn(page);
     await record(page, "藻一杯", { 箱: "1", 盒: "4" });
-    await record(page, "南瓜鬆", { 箱: "0" });
     await page.locator("#done").tap();
     const img = page.locator("#summaryImg");
     await expect(img).toBeVisible();
-    const size = await img.evaluate(el => el.complete && ({ w: el.naturalWidth, h: el.naturalHeight }));
-    expect(size.w).toBe(1080);
-    expect(size.h).toBeGreaterThan(size.w);
+    const size1 = await img.evaluate(el => ({ w: el.naturalWidth, h: el.naturalHeight }));
+    expect(size1.w).toBe(1080);
+    await page.locator("#back").tap();
+    for (const name of ["南瓜鬆", "甘露飲", "西芹粉"]) await record(page, name, { 盒: "1" });
+    await page.locator("#done").tap();
+    const h4 = await page.locator("#summaryImg").evaluate(el => el.naturalHeight);
+    expect(h4).toBeGreaterThan(size1.h);
   });
   test("無法直接分享時提示長按圖片", async ({ page }) => {
     await signIn(page);

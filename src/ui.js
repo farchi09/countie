@@ -158,10 +158,8 @@
       if (line) out.push(line); return out;
     };
     const zLines = sum.zero.length ? wrap(sum.zero.map(i => P[i].name).join("、"), W - pad * 2 - 48, `36px ${F}`) : [];
-    const nLines = sum.none.length ? wrap(sum.none.map(i => P[i].name).join("、"), W - pad * 2 - 48, `32px ${F}`) : [];
     let H = pad + 170 + rowH * Math.max(sum.has.length, 1) + 40;
     if (zLines.length) H += 120 + zLines.length * 54;
-    if (nLines.length) H += 110 + nLines.length * 48;
     c.width = W; c.height = H + pad;
     const roundRect = (a, b, w, h, r) => { x.beginPath(); x.moveTo(a + r, b); x.arcTo(a + w, b, a + w, b + h, r); x.arcTo(a + w, b + h, a, b + h, r); x.arcTo(a, b + h, a, b, r); x.arcTo(a, b, a + w, b, r); x.fill(); };
     x.fillStyle = "#ffffff"; x.fillRect(0, 0, W, c.height);
@@ -194,7 +192,7 @@
       x.font = font; lines.forEach((l, i) => x.fillText(l, pad + 24, y + 60 + lh * (i + 1))); y += h + 30;
     };
     if (zLines.length) box(zLines, `庫存為 0（${sum.zero.length} 項）`, "#fbefc9", "#6b4c00", `36px ${F}`, 54);
-    if (nLines.length) box(nLines, `這次沒有盤點（${sum.none.length} 項）`, "#eef2f1", "#52646b", `32px ${F}`, 48);
+    c.dataset.sections = ["list", ...(zLines.length ? ["zero"] : [])].join(",");
     return c;
   }
 
@@ -209,7 +207,7 @@
     try { await Promise.race([document.fonts.load('44px "Noto Sans TC"'), new Promise(r => setTimeout(r, 1500))]); } catch (e) { /* 字型載不到就用系統字 */ }
     const c = draw();
     c.toBlob(b => { lastBlob = b; }, "image/png");
-    $("out").innerHTML = `<img id="summaryImg" src="${c.toDataURL("image/png")}" alt="盤點摘要圖">`;
+    $("out").innerHTML = `<img id="summaryImg" src="${c.toDataURL("image/png")}" alt="盤點摘要圖" data-sections="${c.dataset.sections}">`;
     $("outCard").hidden = false; $("outCard").scrollIntoView({ behavior: "smooth", block: "start" });
   });
   $("share").addEventListener("click", async () => {
